@@ -3,6 +3,7 @@ package quvoncuz.entities;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import quvoncuz.enums.TourStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,5 +27,6 @@ public class TourEntity {
     private Boolean isActive;
     private Long viewCount;
     private Double rating;
+    private TourStatus status;
     private LocalDateTime createdDate;
 }

@@ -1,6 +1,7 @@
 package quvoncuz.dto.tour;
 
 import lombok.Data;
+import quvoncuz.enums.TourStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,4 +18,5 @@ public class TourShortInfo {
     private LocalDate startDate;
     private Long viewCount;
     private Double rating;
+    private TourStatus status;
 }

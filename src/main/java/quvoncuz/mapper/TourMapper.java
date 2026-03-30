@@ -4,6 +4,7 @@ import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.entities.TourEntity;
+import quvoncuz.enums.TourStatus;
 
 public class TourMapper {
 
@@ -17,6 +18,7 @@ public class TourMapper {
         tour.setMaxSeats(dto.getMaxSeats());
         tour.setStartDate(dto.getStartDate());
         tour.setEndDate(dto.getEndDate());
+        tour.setStatus(TourStatus.ACTIVE);
         return tour;
     }
 
@@ -32,6 +34,7 @@ public class TourMapper {
         shortInfo.setStartDate(entity.getStartDate());
         shortInfo.setViewCount(entity.getViewCount());
         shortInfo.setRating(entity.getRating());
+        shortInfo.setStatus(entity.getStatus());
         return shortInfo;
     }
 
@@ -50,6 +53,7 @@ public class TourMapper {
         fullInfo.setEndDate(entity.getEndDate());
         fullInfo.setViewCount(entity.getViewCount());
         fullInfo.setRating(entity.getRating());
+        fullInfo.setStatus(entity.getStatus());
         return fullInfo;
     }
 

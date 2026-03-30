@@ -2,6 +2,7 @@ package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.TourEntity;
+import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
@@ -108,12 +109,13 @@ public class TourRepository {
                 t.getIsActive() + "," +
                 t.getViewCount() + "," +
                 t.getRating() + "," +
+                t.getStatus() + "," +
                 t.getCreatedDate();
     }
 
     private TourEntity fromCsvLine(String line) {
         String[] s = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-        if (s.length != 15) {
+        if (s.length != 16) {
             return null;
         }
         try {
@@ -132,7 +134,8 @@ public class TourRepository {
                     Boolean.parseBoolean(s[11].trim()),
                     Long.parseLong(s[12].trim()),
                     Double.parseDouble(s[13].trim()),
-                    LocalDateTime.parse(s[14].trim())
+                    TourStatus.valueOf(s[14].trim()),
+                    LocalDateTime.parse(s[15].trim())
             );
         } catch (Exception e) {
             System.err.println(e.getMessage());
