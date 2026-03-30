@@ -15,24 +15,20 @@ import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.TourService;
-import quvoncuz.utils.SecurityUtils;
 
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
 public class TourServiceImpl implements TourService {
 
-    public final AgencyRepository agencyRepository;
-    public final ProfileRepository profileRepository;
+    private final AgencyRepository agencyRepository;
+    private final ProfileRepository profileRepository;
     private final TourRepository tourRepository;
 
     @Override
-    public TourFullInfo createTour(CreateTourRequestDTO dto) {
-
-        Long profileId = SecurityUtils.getCurrentUserId();
-        AgencyEntity agency = agencyRepository.findByOwnerId(profileId);
-        if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)){
+    public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
+        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId);
+        if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)) {
             throw new PermissionDeniedException("You don't have access to create tour!");
         }
 
@@ -43,15 +39,15 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public TourFullInfo updateTour(UpdateTourRequestDTO dto) {
-        Long ownerId = SecurityUtils.getCurrentUserId();
+    public TourFullInfo updateTour(UpdateTourRequestDTO dto, Long ownerId) {
         Long agencyId = agencyRepository.getAllAgencies()
                 .stream()
+                .filter(agency -> agency.getOwnerId().equals(ownerId)
+                        && agency.getId().equals(dto.getId()))
                 .findFirst()
-                .filter(agency -> agency.getOwnerId().equals(ownerId))
                 .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!")).getId();
 
-        List<TourEntity> allTour = tourRepository.getAllTour();
+        List<TourEntity> allTour = tourRepository.findAll();
         TourEntity tour = allTour.stream()
                 .filter(t -> t.getId().equals(dto.getId()) && t.getAgencyId().equals(agencyId))
                 .findFirst()
@@ -71,14 +67,13 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public boolean deleteTour(Long tourId) {
-        Long ownerId = SecurityUtils.getCurrentUserId();
+    public boolean deleteTour(Long tourId, Long ownerId) {
         Long agencyId = agencyRepository.getAllAgencies()
                 .stream()
                 .findFirst()
                 .filter(agency -> agency.getOwnerId().equals(ownerId))
                 .orElseThrow(() -> new PermissionDeniedException("You don't have access to delete tour!")).getId();
-        TourEntity tour = tourRepository.getAllTour()
+        TourEntity tour = tourRepository.findAll()
                 .stream()
                 .filter(t -> t.getId().equals(tourId) && t.getAgencyId().equals(agencyId))
                 .findFirst()
@@ -88,7 +83,7 @@ public class TourServiceImpl implements TourService {
 
     @Override
     public List<TourShortInfo> getAllTour() {
-        return tourRepository.getAllTour()
+        return tourRepository.findAll()
                 .stream()
                 .map(TourMapper::toShortInfo)
                 .toList();
@@ -96,13 +91,13 @@ public class TourServiceImpl implements TourService {
 
     @Override
     public TourFullInfo getById(Long id) {
-        TourEntity tourById = tourRepository.getTourById(id);
+        TourEntity tourById = tourRepository.findById(id);
         return TourMapper.toFullInfo(tourById);
     }
 
     @Override
     public List<TourShortInfo> search(String query) {
-        return tourRepository.getAllTour()
+        return tourRepository.findAll()
                 .stream()
                 .filter(tour -> tour.getDestination().contains(query) || tour.getTitle().contains(query))
                 .map(TourMapper::toShortInfo)

@@ -6,139 +6,150 @@ import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class TourRepository {
 
-    private final String FILE_NAME = "tours.csv";
-    private final String FILE_PATH = "resource";
+
+    private static final String FILE_NAME = "tours.csv";
+    private static final String HEADER =
+            "id,agencyId,title,description,destination,price," +
+                    "durationDays,maxSeats,availableSeats,startDate,endDate," +
+                    "isActive,viewCount,rating,createdDate";
+
+    public long getMaxId() {
+        List<TourEntity> existing = readFromFile();
+        return existing.stream()
+                .mapToLong(TourEntity::getId)
+                .max()
+                .orElse(0L)+1;
+    }
 
     public void createOrUpdate(List<TourEntity> tours, boolean isAppend) {
-        File file = new File(FILE_NAME);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        try (BufferedWriter writer = new BufferedWriter(
+                new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
+            if (!isAppend){
+                writer.write(HEADER);
+                writer.newLine();
             }
-        }
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, isAppend))) {
-            if (!isAppend) {
-                writer.write("""
-                        id,
-                        agencyId,
-                        title,
-                        description,
-                        destination,
-                        price,
-                        durationDays,
-                        maxSeats,
-                        availableSeats,
-                        startDate,
-                        endDate,
-                        isActive,
-                        viewCount,
-                        rating,
-                        createdDate""");
+            for (TourEntity t : tours) {
+                writer.write(toCsvLine(t));
+                writer.newLine();
             }
-            writer.newLine();
-
-            for (TourEntity tour : tours) {
-                writer.write(
-                        tour.getId() + "," +
-                                tour.getAgencyId() + "," +
-                                tour.getTitle() + "," +
-                                tour.getDescription() + "," +
-                                tour.getDestination() + "," +
-                                tour.getPrice() + "," +
-                                tour.getDurationDays() + "," +
-                                tour.getMaxSeats() + "," +
-                                tour.getAvailableSeats() + "," +
-                                tour.getStartDate() + "," +
-                                tour.getEndDate() + "," +
-                                tour.getIsActive() + "," +
-                                tour.getViewCount() + "," +
-                                tour.getRating() + "," +
-                                tour.getCreatedDate());
-            }
-            writer.newLine();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
-    public List<TourEntity> getAllTour() {
-        List<TourEntity> tours = new LinkedList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+    public List<TourEntity> findAll() {
+            return readFromFile();
+    }
 
-            String line;
-            boolean isFirstLine = true;
+    public TourEntity findById(Long id) {
+            return readFromFile().stream()
+                    .filter(t -> t.getId().equals(id))
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Tour not found"));
+    }
 
-            while ((line = reader.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
-
-                String[] splits = line.split(",");
-                if (splits.length == 15) {
-                    Long id = Long.parseLong(splits[0]);
-                    Long agencyId = Long.parseLong(splits[1]);
-                    String title = splits[2];
-                    String description = splits[3];
-                    String destination = splits[4];
-                    BigDecimal price = BigDecimal.valueOf(Long.parseLong(splits[5]));
-                    Integer durationDays = Integer.valueOf(splits[6]);
-                    Integer maxSeats = Integer.valueOf(splits[7]);
-                    Integer availableSeats = Integer.valueOf(splits[8]);
-                    LocalDate startDate = LocalDate.parse(splits[9]);
-                    LocalDate endDate = LocalDate.parse(splits[10]);
-                    Boolean isActive = Boolean.valueOf(splits[11]);
-                    Long viewCount = Long.parseLong(splits[12]);
-                    Double rating = Double.valueOf(splits[13]);
-                    LocalDateTime createdDate = LocalDateTime.parse(splits[14]);
-                    tours.add(new TourEntity(id,
-                            agencyId,
-                            title,
-                            description,
-                            destination,
-                            price,
-                            durationDays,
-                            maxSeats,
-                            availableSeats,
-                            startDate,
-                            endDate,
-                            isActive,
-                            viewCount,
-                            rating,
-                            createdDate));
-                }
-            }
-            return tours;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+    public List<TourEntity> findByAgencyId(Long agencyId) {
+            return readFromFile().stream()
+                    .filter(tour -> tour.getAgencyId().equals(agencyId))
+                    .toList();
     }
 
     public boolean deleteById(Long id) {
-        List<TourEntity> allTour = getAllTour();
-        TourEntity tour1 = allTour.stream()
-                .filter(tour -> tour.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Tour with id " + id + " not found!"));
-        allTour.remove(tour1);
-        createOrUpdate(allTour, false);
-        return true;
+            List<TourEntity> all = readFromFile();
+            boolean removed = all.removeIf(t -> t.getId().equals(id));
+            if (removed) createOrUpdate(all, false);
+            return removed;
     }
 
-    public TourEntity getTourById(Long id) {
-        return getAllTour().stream().filter(tour -> tour.getId().equals(id))
-                .findFirst().orElseThrow(() -> new NotFoundException("tour not found"));
+    private List<TourEntity> readFromFile() {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) return new LinkedList<>();
+
+        List<TourEntity> tours = new LinkedList<>();
+        try (BufferedReader reader = new BufferedReader(
+                new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
+
+            String line;
+            boolean isFirstLine = true;
+            while ((line = reader.readLine()) != null) {
+                if (isFirstLine) { isFirstLine = false; continue; }
+                if (line.trim().isEmpty()) continue;
+                TourEntity entity = fromCsvLine(line);
+                if (entity != null) tours.add(entity);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return tours;
+    }
+
+    private String toCsvLine(TourEntity t) {
+        return t.getId() + "," +
+                t.getAgencyId() + "," +
+                escape(t.getTitle()) + "," +
+                escape(t.getDescription()) + "," +
+                escape(t.getDestination()) + "," +
+                t.getPrice() + "," +
+                t.getDurationDays() + "," +
+                t.getMaxSeats() + "," +
+                t.getAvailableSeats() + "," +
+                t.getStartDate() + "," +
+                t.getEndDate() + "," +
+                t.getIsActive() + "," +
+                t.getViewCount() + "," +
+                t.getRating() + "," +
+                t.getCreatedDate();
+    }
+
+    private TourEntity fromCsvLine(String line) {
+        String[] s = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+        if (s.length != 15) {
+            return null;
+        }
+        try {
+            return new TourEntity(
+                    Long.parseLong(s[0].trim()),
+                    Long.parseLong(s[1].trim()),
+                    unescape(s[2]),
+                    unescape(s[3]),
+                    unescape(s[4]),
+                    new BigDecimal(s[5].trim()),
+                    Integer.parseInt(s[6].trim()),
+                    Integer.parseInt(s[7].trim()),
+                    Integer.parseInt(s[8].trim()),
+                    LocalDate.parse(s[9].trim()),
+                    LocalDate.parse(s[10].trim()),
+                    Boolean.parseBoolean(s[11].trim()),
+                    Long.parseLong(s[12].trim()),
+                    Double.parseDouble(s[13].trim()),
+                    LocalDateTime.parse(s[14].trim())
+            );
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return null;
+        }
+    }
+
+    private String escape(String value) {
+        if (value == null) return "\"\"";
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
+    private String unescape(String value) {
+        if (value == null) return "";
+        value = value.trim();
+        if (value.startsWith("\"") && value.endsWith("\""))
+            value = value.substring(1, value.length() - 1);
+        return value.replace("\"\"", "\"");
     }
 }
