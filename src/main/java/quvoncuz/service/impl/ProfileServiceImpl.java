@@ -12,6 +12,7 @@ import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -30,10 +31,11 @@ public class ProfileServiceImpl implements ProfileService {
     @Value("${admin.default.password}")
     private String adminPassword;
 
+    @PostConstruct
     public void initDefaultAdmin() {
         if (!existsByUsername(adminUsername)) {
             ProfileEntity admin = new ProfileEntity(
-                    0L,
+                    null,
                     "admin",
                     adminUsername,
                     adminEmail,
