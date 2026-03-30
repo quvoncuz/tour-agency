@@ -1,17 +1,12 @@
-package quvoncuz.entities;
+package quvoncuz.dto.agency;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import quvoncuz.enums.AgencyStatus;
-
-import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-public class AgencyEntity {
-
+public class AgencyFullInfo {
     private Long id;
     private Long ownerId;
     private String name;
@@ -20,7 +15,5 @@ public class AgencyEntity {
     private String description;
     private String city;
     private String address;
-    private Boolean approved;
     private Double rating;
-    private AgencyStatus status;
 }
