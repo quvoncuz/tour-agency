@@ -3,6 +3,7 @@ package quvoncuz.repository;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.BookingEntity;
 import quvoncuz.enums.BookingStatus;
+import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -79,12 +80,13 @@ public class BookingRepository {
         }
     }
 
-    public Optional<BookingEntity> findById(Long id) {
+    public BookingEntity findById(Long id) {
         rwLock.readLock().lock();
         try {
             return readFromFile().stream()
                     .filter(b -> b.getId().equals(id))
-                    .findFirst();
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Booking not found with id: " + id));
         } finally {
             rwLock.readLock().unlock();
         }

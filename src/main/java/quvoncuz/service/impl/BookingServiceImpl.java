@@ -3,15 +3,20 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
+import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.PaymentEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.BookingStatus;
+import quvoncuz.enums.PaymentStatus;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.mapper.BookingMapper;
+import quvoncuz.mapper.PaymentMapper;
 import quvoncuz.repository.BookingRepository;
+import quvoncuz.repository.PaymentRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.BookingService;
@@ -25,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final TourRepository tourRepository;
     private final ProfileRepository profileRepository;
+    private final PaymentRepository paymentRepository;
 
 
     @Override
@@ -67,11 +73,14 @@ public class BookingServiceImpl implements BookingService {
 
         tourRepository.createOrUpdate(allTour, false);
 
-        BookingEntity entity = BookingMapper.toEntity(dto, userId);
-        entity.setTotalPrice(tour.getPrice().multiply(BigDecimal.valueOf(dto.getSeatsBooked())));
+        BookingEntity booking = BookingMapper.toEntity(dto, userId);
+        booking.setTotalPrice(tour.getPrice().multiply(BigDecimal.valueOf(dto.getSeatsBooked())));
 
-        bookingRepository.createOrUpdate(List.of(entity), true);
-        return BookingMapper.toFullInfo(entity);
+        PaymentEntity payment = PaymentMapper.toEntity(new PaymentRequestDTO(tour.getId(), booking.getId()), userId);
+        paymentRepository.createOrUpdate(List.of(payment), true);
+
+        bookingRepository.createOrUpdate(List.of(booking), true);
+        return BookingMapper.toFullInfo(booking);
 
     }
 
@@ -153,6 +162,13 @@ public class BookingServiceImpl implements BookingService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Tour not found for tourId: " + booking.getTourId()));
 
+        List<PaymentEntity> allPayment = paymentRepository.findAll();
+        PaymentEntity payment = allPayment.stream()
+                .filter(p -> p.getBookingId().equals(booking.getId())
+                        && p.getUserId().equals(user))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Payment not found"));
+
         if (tour.getStatus() != TourStatus.ACTIVE) {
             throw new IllegalArgumentException("Tour is not active for tourId: " + tour.getId());
         }
@@ -169,11 +185,21 @@ public class BookingServiceImpl implements BookingService {
             tour.setStatus(TourStatus.SOLD_OUT);
         }
 
-        tourRepository.createOrUpdate(allTour, false);
+        if (payment.getStatus() != PaymentStatus.PAID) {
+            payment.setAmount(tour.getPrice().multiply(BigDecimal.valueOf(seats)));
+            paymentRepository.createOrUpdate(allPayment, false);
+        } else {
+            PaymentEntity newPayment = PaymentMapper.toEntity(new PaymentRequestDTO(tour.getId(), booking.getId()), user);
+            newPayment.setAmount(tour.getPrice().multiply(BigDecimal.valueOf(seatsDifference)));
+            paymentRepository.createOrUpdate(List.of(newPayment), true);
+        }
+
 
         booking.setSeatsBooked(seats);
         booking.setTotalPrice(tour.getPrice().multiply(BigDecimal.valueOf(seats)));
         bookingRepository.createOrUpdate(allBooking, false);
+
+        tourRepository.createOrUpdate(allTour, false);
 
         return BookingMapper.toFullInfo(booking);
     }
