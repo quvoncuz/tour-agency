@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class TourRepository {
@@ -24,18 +26,26 @@ public class TourRepository {
                     "durationDays,maxSeats,availableSeats,startDate,endDate," +
                     "isActive,viewCount,rating,createdDate";
 
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
     public long getMaxId() {
-        List<TourEntity> existing = readFromFile();
-        return existing.stream()
-                .mapToLong(TourEntity::getId)
-                .max()
-                .orElse(0L)+1;
+        rwLock.readLock().lock();
+        try {
+            List<TourEntity> existing = readFromFile();
+            return existing.stream()
+                    .mapToLong(TourEntity::getId)
+                    .max()
+                    .orElse(0L) + 1;
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public void createOrUpdate(List<TourEntity> tours, boolean isAppend) {
+        rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend){
+            if (!isAppend) {
                 writer.write(HEADER);
                 writer.newLine();
             }
@@ -45,31 +55,53 @@ public class TourRepository {
             }
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            rwLock.writeLock().unlock();
         }
     }
 
     public List<TourEntity> findAll() {
+        rwLock.readLock().lock();
+        try {
             return readFromFile();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public TourEntity findById(Long id) {
+        rwLock.readLock().lock();
+        try {
             return readFromFile().stream()
                     .filter(t -> t.getId().equals(id))
                     .findFirst()
                     .orElseThrow(() -> new NotFoundException("Tour not found"));
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public List<TourEntity> findByAgencyId(Long agencyId) {
+        rwLock.readLock().lock();
+        try {
             return readFromFile().stream()
                     .filter(tour -> tour.getAgencyId().equals(agencyId))
                     .toList();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public boolean deleteById(Long id) {
+        rwLock.writeLock().lock();
+        try {
             List<TourEntity> all = readFromFile();
             boolean removed = all.removeIf(t -> t.getId().equals(id));
             if (removed) createOrUpdate(all, false);
             return removed;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
     private List<TourEntity> readFromFile() {
@@ -83,7 +115,10 @@ public class TourRepository {
             String line;
             boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; }
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
                 if (line.trim().isEmpty()) continue;
                 TourEntity entity = fromCsvLine(line);
                 if (entity != null) tours.add(entity);
