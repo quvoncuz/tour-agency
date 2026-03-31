@@ -2,16 +2,18 @@ package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.exceptions.NotFoundException;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,18 +25,16 @@ public class BookingRepository {
             "id,userId,tourId,seatsBooked,paidAmount,totalPrice,status,note,bookedAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    public long getMaxId() {
-        rwLock.readLock().lock();
-        try {
-            List<BookingEntity> existing = readFromFile();
-            return existing.stream()
-                    .mapToLong(BookingEntity::getId)
-                    .max()
-                    .orElse(0L) + 1;
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    @PostConstruct
+    public void getMaxId() {
+        List<BookingEntity> existing = readFromFile();
+        long maxId = existing.stream()
+                .mapToLong(BookingEntity::getId)
+                .max()
+                .orElse(0L);
+        idGenerator.set(maxId + 1);
     }
 
     public void createOrUpdate(List<BookingEntity> bookings, boolean isAppend) {
@@ -47,7 +47,7 @@ public class BookingRepository {
             }
             for (BookingEntity b : bookings) {
                 if (b.getId() == null) {
-                    b.setId(getMaxId());
+                    b.setId(idGenerator.getAndIncrement());
                 }
                 writer.write(toCsvLine(b));
                 writer.newLine();

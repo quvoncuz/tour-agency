@@ -2,14 +2,16 @@ package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.AgencyEntity;
-import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.exceptions.NotFoundException;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,18 +23,16 @@ public class AgencyRepository {
             "id,ownerId,name,phone,email,description,city,address,approved,rating,status";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    public long getMaxId() {
-        rwLock.readLock().lock();
-        try {
-            List<AgencyEntity> existing = readFromFile();
-            return existing.stream()
-                    .mapToLong(AgencyEntity::getId)
-                    .max()
-                    .orElse(0L) + 1;
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    @PostConstruct
+    public void getMaxId() {
+        List<AgencyEntity> existing = readFromFile();
+        long maxId = existing.stream()
+                .mapToLong(AgencyEntity::getId)
+                .max()
+                .orElse(0L);
+        idGenerator.set(maxId + 1);
     }
 
     public void createOrUpdate(List<AgencyEntity> agencies, boolean isAppend) {
@@ -45,11 +45,14 @@ public class AgencyRepository {
                     writer.newLine();
                 }
                 for (AgencyEntity a : agencies) {
+                    if (a.getId() == null) {
+                        a.setId(idGenerator.getAndIncrement());
+                    }
                     writer.write(toCsvLine(a));
                     writer.newLine();
                 }
             } catch (IOException e) {
-                throw new RuntimeException("booking.csv yozishda xato: " + e.getMessage(), e);
+                throw new RuntimeException(e.getMessage());
             }
         } finally {
             rwLock.writeLock().unlock();

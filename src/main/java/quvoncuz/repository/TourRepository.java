@@ -1,10 +1,12 @@
 package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
+import quvoncuz.entities.RatingEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.NotFoundException;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -27,20 +30,17 @@ public class TourRepository {
                     "isActive,viewCount,rating,createdDate";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    public long getMaxId() {
-        rwLock.readLock().lock();
-        try {
-            List<TourEntity> existing = readFromFile();
-            return existing.stream()
-                    .mapToLong(TourEntity::getId)
-                    .max()
-                    .orElse(0L) + 1;
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    @PostConstruct
+    public void getMaxId() {
+        List<TourEntity> existing = readFromFile();
+        long maxId = existing.stream()
+                .mapToLong(TourEntity::getId)
+                .max()
+                .orElse(0L);
+        idGenerator.set(maxId + 1);
     }
-
     public void createOrUpdate(List<TourEntity> tours, boolean isAppend) {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
@@ -50,6 +50,9 @@ public class TourRepository {
                 writer.newLine();
             }
             for (TourEntity t : tours) {
+                if (t.getId() == null) {
+                    t.setId(idGenerator.getAndIncrement());
+                }
                 writer.write(toCsvLine(t));
                 writer.newLine();
             }

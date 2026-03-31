@@ -2,8 +2,10 @@ package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.PaymentEntity;
+import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.PaymentStatus;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -21,18 +24,16 @@ public class PaymentRepository {
             "id,userId,tourId,bookingId,amount,status,createdAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    public long getMaxId() {
-        rwLock.readLock().lock();
-        try {
-            List<PaymentEntity> existing = readFromFile();
-            return existing.stream()
-                    .mapToLong(PaymentEntity::getId)
-                    .max()
-                    .orElse(0L) + 1;
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    @PostConstruct
+    public void getMaxId() {
+        List<PaymentEntity> existing = readFromFile();
+        long maxId = existing.stream()
+                .mapToLong(PaymentEntity::getId)
+                .max()
+                .orElse(0L);
+        idGenerator.set(maxId + 1);
     }
 
     public void createOrUpdate(List<PaymentEntity> payments, boolean isAppend) {
@@ -45,7 +46,7 @@ public class PaymentRepository {
             }
             for (PaymentEntity p : payments) {
                 if (p.getId() == null) {
-                    p.setId(getMaxId());
+                    p.setId(idGenerator.getAndIncrement());
                 }
                 writer.write(toCsvLine(p));
                 writer.newLine();

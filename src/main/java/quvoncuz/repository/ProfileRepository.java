@@ -2,16 +2,19 @@ package quvoncuz.repository;
 
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.ProfileEntity;
+import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
 import quvoncuz.exceptions.NotFoundException;
 
+import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,18 +26,16 @@ public class ProfileRepository {
             "id,fullName,username,email,password,balance,role,gender,isCreateAgency,isActive";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final AtomicLong idGenerator = new AtomicLong(1);
 
-    public long getMaxId() {
-        rwLock.readLock().lock();
-        try {
-            List<ProfileEntity> existing = readFromFile();
-            return existing.stream()
-                    .mapToLong(ProfileEntity::getId)
-                    .max()
-                    .orElse(0L) + 1;
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    @PostConstruct
+    public void getMaxId() {
+        List<ProfileEntity> existing = readFromFile();
+        long maxId = existing.stream()
+                .mapToLong(ProfileEntity::getId)
+                .max()
+                .orElse(0L);
+        idGenerator.set(maxId + 1);
     }
 
     public void createOrReplace(List<ProfileEntity> profiles, boolean isAppend) {
@@ -45,7 +46,7 @@ public class ProfileRepository {
             writer.newLine();
             for (ProfileEntity p : profiles) {
                 if (p.getId() == null) {
-                    p.setId(getMaxId());
+                    p.setId(idGenerator.getAndIncrement());
                 }
                 writer.write(toCsvLine(p));
                 writer.newLine();
