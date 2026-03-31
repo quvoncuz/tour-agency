@@ -11,26 +11,36 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class BookingRepository {
 
     private final String FILE_NAME = "booking.csv";
     private static final String HEADER =
-            "id,userId,tourId,seatsBooked,totalPrice,status,note,bookedAt";
+            "id,userId,tourId,seatsBooked,paidAmount,totalPrice,status,note,bookedAt";
+
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 
     public long getMaxId() {
-        List<BookingEntity> existing = readFromFile();
-        return existing.stream()
-                .mapToLong(BookingEntity::getId)
-                .max()
-                .orElse(0L) + 1;
+        rwLock.readLock().lock();
+        try {
+            List<BookingEntity> existing = readFromFile();
+            return existing.stream()
+                    .mapToLong(BookingEntity::getId)
+                    .max()
+                    .orElse(0L) + 1;
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public void createOrUpdate(List<BookingEntity> bookings, boolean isAppend) {
+        rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend){
+            if (!isAppend) {
                 writer.write(HEADER);
                 writer.newLine();
             }
@@ -43,38 +53,76 @@ public class BookingRepository {
             }
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            rwLock.writeLock().unlock();
         }
+    }
 
+    public boolean existsByTourIdAndUserId(Long tourId, Long userId) {
+        rwLock.readLock().lock();
+        try {
+            return readFromFile()
+                    .stream()
+                    .anyMatch(booking -> booking.getTourId().equals(tourId)
+                            && booking.getUserId().equals(userId));
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public List<BookingEntity> findAll() {
-        return readFromFile();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public Optional<BookingEntity> findById(Long id) {
-        return readFromFile().stream()
-                .filter(b -> b.getId().equals(id))
-                .findFirst();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream()
+                    .filter(b -> b.getId().equals(id))
+                    .findFirst();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public List<BookingEntity> findByUserId(Long userId) {
-        return readFromFile()
-                .stream()
-                .filter(booking -> booking.getUserId().equals(userId))
-                .toList();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile()
+                    .stream()
+                    .filter(booking -> booking.getUserId().equals(userId))
+                    .toList();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public List<BookingEntity> findByTourId(Long tourId) {
-        return readFromFile()
-                .stream()
-                .filter(booking -> booking.getTourId().equals(tourId))
-                .toList();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile()
+                    .stream()
+                    .filter(booking -> booking.getTourId().equals(tourId))
+                    .toList();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public List<BookingEntity> findByStatus(BookingStatus status) {
-        return readFromFile().stream()
-                .filter(booking -> booking.getStatus().equals(status))
-                .toList();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream()
+                    .filter(booking -> booking.getStatus().equals(status))
+                    .toList();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     private List<BookingEntity> readFromFile() {
@@ -107,6 +155,7 @@ public class BookingRepository {
                 b.getUserId() + "," +
                 b.getTourId() + "," +
                 b.getSeatsBooked() + "," +
+                b.getPaidAmount() + "," +
                 b.getTotalPrice() + "," +
                 b.getStatus() + "," +
                 escape(b.getNote()) + "," +
@@ -115,7 +164,7 @@ public class BookingRepository {
 
     private BookingEntity fromCsvLine(String line) {
         String[] s = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-        if (s.length != 8) {
+        if (s.length != 9) {
             return null;
         }
         try {
@@ -125,9 +174,10 @@ public class BookingRepository {
                     Long.parseLong(s[2].trim()),
                     Integer.parseInt(s[3].trim()),
                     new BigDecimal(s[4].trim()),
-                    BookingStatus.valueOf(s[5].trim()),
-                    unescape(s[6]),
-                    LocalDateTime.parse(s[7].trim())
+                    new BigDecimal(s[5].trim()),
+                    BookingStatus.valueOf(s[6].trim()),
+                    unescape(s[7]),
+                    LocalDateTime.parse(s[8].trim())
             );
         } catch (Exception e) {
             return null;

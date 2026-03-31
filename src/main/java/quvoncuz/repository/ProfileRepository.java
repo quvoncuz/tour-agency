@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class ProfileRepository {
@@ -20,15 +22,23 @@ public class ProfileRepository {
     private static final String HEADER =
             "id,fullName,username,email,password,balance,role,gender,isCreateAgency,isActive";
 
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
     public long getMaxId() {
-        List<ProfileEntity> existing = readFromFile();
-        return existing.stream()
-                .mapToLong(ProfileEntity::getId)
-                .max()
-                .orElse(0L) + 1;
+        rwLock.readLock().lock();
+        try {
+            List<ProfileEntity> existing = readFromFile();
+            return existing.stream()
+                    .mapToLong(ProfileEntity::getId)
+                    .max()
+                    .orElse(0L) + 1;
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public void createOrReplace(List<ProfileEntity> profiles, boolean isAppend) {
+        rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, false))) {
             writer.write(HEADER);
@@ -42,49 +52,84 @@ public class ProfileRepository {
             }
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            rwLock.writeLock().unlock();
         }
     }
 
     public List<ProfileEntity> findAll() {
-
-        return readFromFile();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public ProfileEntity findById(Long id) {
 
-        return readFromFile().stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Profile not found with id: " + id));
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream()
+                    .filter(p -> p.getId().equals(id))
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Profile not found with id: " + id));
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public Optional<ProfileEntity> findByUsername(String username) {
-
-        return readFromFile().stream()
-                .filter(p -> p.getUsername().equals(username))
-                .findFirst();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream()
+                    .filter(p -> p.getUsername().equals(username))
+                    .findFirst();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public Optional<ProfileEntity> findByEmail(String email) {
 
-        return readFromFile().stream()
-                .filter(p -> p.getEmail().equals(email))
-                .findFirst();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream()
+                    .filter(p -> p.getEmail().equals(email))
+                    .findFirst();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public boolean existsByUsername(String username) {
-        return findByUsername(username).isPresent();
+        rwLock.readLock().lock();
+        try {
+            return findByUsername(username).isPresent();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public boolean existsByEmail(String email) {
-        return findByEmail(email).isPresent();
+        rwLock.readLock().lock();
+        try {
+            return findByEmail(email).isPresent();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public boolean deleteById(Long id) {
-        List<ProfileEntity> all = readFromFile();
-        boolean removed = all.removeIf(p -> p.getId().equals(id));
-        if (removed) createOrReplace(all, false);
-        return removed;
+        rwLock.writeLock().lock();
+        try {
+            List<ProfileEntity> all = readFromFile();
+            boolean removed = all.removeIf(p -> p.getId().equals(id));
+            if (removed) createOrReplace(all, false);
+            return removed;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
     }
 
     private List<ProfileEntity> readFromFile() {

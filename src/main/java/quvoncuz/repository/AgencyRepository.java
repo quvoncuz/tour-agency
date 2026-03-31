@@ -10,6 +10,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class AgencyRepository {
@@ -18,47 +20,74 @@ public class AgencyRepository {
     private static final String HEADER =
             "id,ownerId,name,phone,email,description,city,address,approved,rating,status";
 
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+
     public long getMaxId() {
-        List<AgencyEntity> existing = readFromFile();
-        return existing.stream()
-                .mapToLong(AgencyEntity::getId)
-                .max()
-                .orElse(0L) + 1;
+        rwLock.readLock().lock();
+        try {
+            List<AgencyEntity> existing = readFromFile();
+            return existing.stream()
+                    .mapToLong(AgencyEntity::getId)
+                    .max()
+                    .orElse(0L) + 1;
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     public void createOrUpdate(List<AgencyEntity> agencies, boolean isAppend) {
-        try (BufferedWriter writer = new BufferedWriter(
-                new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend){
-                writer.write(HEADER);
-                writer.newLine();
+        rwLock.writeLock().lock();
+        try {
+            try (BufferedWriter writer = new BufferedWriter(
+                    new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
+                if (!isAppend) {
+                    writer.write(HEADER);
+                    writer.newLine();
+                }
+                for (AgencyEntity a : agencies) {
+                    writer.write(toCsvLine(a));
+                    writer.newLine();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("booking.csv yozishda xato: " + e.getMessage(), e);
             }
-            for (AgencyEntity a : agencies) {
-                writer.write(toCsvLine(a));
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("booking.csv yozishda xato: " + e.getMessage(), e);
+        } finally {
+            rwLock.writeLock().unlock();
         }
 
     }
 
     public List<AgencyEntity> getAllAgencies() {
-        return readFromFile();
+        rwLock.readLock().lock();
+        try {
+            return readFromFile();
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
-    public AgencyEntity findById(Long agencyId){
-        return readFromFile().stream().filter(a -> a.getId().equals(agencyId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + agencyId));
+    public AgencyEntity findById(Long agencyId) {
+        rwLock.readLock().lock();
+        try {
+            return readFromFile().stream().filter(a -> a.getId().equals(agencyId))
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + agencyId));
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
-    public AgencyEntity findByOwnerId(Long ownerId){
-        return readFromFile()
-                .stream()
-                .filter(a -> a.getOwnerId().equals(ownerId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Agency not found with owner id: " + ownerId));
+    public AgencyEntity findByOwnerId(Long ownerId) {
+        rwLock.readLock().lock();
+        try {
+            return readFromFile()
+                    .stream()
+                    .filter(a -> a.getOwnerId().equals(ownerId))
+                    .findFirst()
+                    .orElseThrow(() -> new NotFoundException("Agency not found with owner id: " + ownerId));
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     private List<AgencyEntity> readFromFile() {
@@ -72,7 +101,10 @@ public class AgencyRepository {
             String line;
             boolean firstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (firstLine) { firstLine = false; continue; }
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
                 if (line.trim().isEmpty()) continue;
                 AgencyEntity entity = fromCsvLine(line);
                 if (entity != null) bookings.add(entity);
