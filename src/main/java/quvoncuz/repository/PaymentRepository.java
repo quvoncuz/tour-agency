@@ -1,11 +1,10 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.PaymentEntity;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.PaymentStatus;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -40,7 +39,7 @@ public class PaymentRepository {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend){
+            if (!isAppend) {
                 writer.write(HEADER);
                 writer.newLine();
             }

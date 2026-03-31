@@ -1,12 +1,11 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.AgencyEntity;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.exceptions.NotFoundException;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;

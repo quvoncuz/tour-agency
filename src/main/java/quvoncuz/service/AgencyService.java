@@ -1,7 +1,6 @@
 package quvoncuz.service;
 
 import quvoncuz.dto.agency.*;
-import quvoncuz.entities.AgencyEntity;
 
 public interface AgencyService {
     public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId);

@@ -1,10 +1,10 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.RatingType;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -35,27 +35,23 @@ public class RatingRepository {
         idGenerator.set(maxId + 1);
     }
 
-    public RatingEntity save(RatingEntity rating) {
+    public void createOrReplace(List<RatingEntity> ratings, boolean isAppend) {
         rwLock.writeLock().lock();
-        try {
-            if (rating.getId() == null) {
-                rating.setId(idGenerator.getAndIncrement());
+        try (BufferedWriter writer = new BufferedWriter(
+                new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
+            if (!isAppend) {
+                writer.write(HEADER);
+                writer.newLine();
             }
-
-            List<RatingEntity> all = readFromFile();
-
-            boolean updated = false;
-            for (int i = 0; i < all.size(); i++) {
-                if (all.get(i).getId().equals(rating.getId())) {
-                    all.set(i, rating);
-                    updated = true;
-                    break;
+            for (RatingEntity r : ratings) {
+                if (r.getId() == null) {
+                    r.setId(idGenerator.getAndIncrement());
                 }
+                writer.write(toCsvLine(r));
+                writer.newLine();
             }
-            if (!updated) all.add(rating);
-
-            writeToFile(all);
-            return rating;
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
         } finally {
             rwLock.writeLock().unlock();
         }
@@ -81,68 +77,8 @@ public class RatingRepository {
         }
     }
 
-    public List<RatingEntity> findBySourceIdAndTarget(Long sourceId, RatingType target) {
-        rwLock.readLock().lock();
-        try {
-            List<RatingEntity> result = new LinkedList<>();
-            for (RatingEntity r : readFromFile()) {
-                if (r.getSourceId().equals(sourceId) && r.getType() == target) {
-                    result.add(r);
-                }
-            }
-            return result;
-        } finally {
-            rwLock.readLock().unlock();
-        }
-    }
-
-    public List<RatingEntity> findByUserId(Long userId) {
-        rwLock.readLock().lock();
-        try {
-            List<RatingEntity> result = new LinkedList<>();
-            for (RatingEntity r : readFromFile()) {
-                if (r.getUserId().equals(userId)) result.add(r);
-            }
-            return result;
-        } finally {
-            rwLock.readLock().unlock();
-        }
-    }
-
-    public Optional<RatingEntity> findByUserIdAndSourceIdAndTarget(
-            Long userId, Long sourceId, RatingType target) {
-        rwLock.readLock().lock();
-        try {
-            return readFromFile().stream()
-                    .filter(r -> r.getUserId().equals(userId)
-                            && r.getSourceId().equals(sourceId)
-                            && r.getType() == target)
-                    .findFirst();
-        } finally {
-            rwLock.readLock().unlock();
-        }
-    }
-
-    public boolean existsByUserIdAndSourceIdAndTarget(
-            Long userId, Long sourceId, RatingType target) {
-        return findByUserIdAndSourceIdAndTarget(userId, sourceId, target).isPresent();
-    }
-
     public boolean existsById(Long id) {
         return findById(id).isPresent();
-    }
-
-    public double getAverageStars(Long sourceId, RatingType target) {
-        rwLock.readLock().lock();
-        try {
-            return readFromFile().stream()
-                    .filter(r -> r.getSourceId().equals(sourceId) && r.getType() == target)
-                    .mapToInt(RatingEntity::getStars)
-                    .average()
-                    .orElse(0.0);
-        } finally {
-            rwLock.readLock().unlock();
-        }
     }
 
     public boolean deleteById(Long id) {
@@ -168,7 +104,10 @@ public class RatingRepository {
             String line;
             boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; }
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
                 if (line.trim().isEmpty()) continue;
                 RatingEntity entity = fromCsvLine(line);
                 if (entity != null) ratings.add(entity);
@@ -195,12 +134,12 @@ public class RatingRepository {
 
     private String toCsvLine(RatingEntity r) {
         return r.getId() + "," +
-               r.getUserId() + "," +
-               r.getSourceId() + "," +
+                r.getUserId() + "," +
+                r.getSourceId() + "," +
                 r.getType() + "," +
                 r.getStars() + "," +
                 escape(r.getComment()) + "," +
-               r.getCreatedAt();
+                r.getCreatedAt();
     }
 
     private RatingEntity fromCsvLine(String line) {

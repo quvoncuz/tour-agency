@@ -1,21 +1,21 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import quvoncuz.dto.auth.AuthResponse;
+import quvoncuz.dto.auth.LoginRequestDTO;
+import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.exceptions.AlreadyExistsException;
-import quvoncuz.dto.auth.LoginRequestDTO;
-import quvoncuz.dto.ProfileDTO;
-import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.InvalidException;
-import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.service.AuthService;
 import quvoncuz.service.ProfileService;
 
 import java.util.Base64;
 import java.util.regex.Pattern;
 
+@Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 

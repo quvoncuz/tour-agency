@@ -1,6 +1,7 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.dto.payment.PaymentRequestDTO;
@@ -24,6 +25,7 @@ import quvoncuz.service.BookingService;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 

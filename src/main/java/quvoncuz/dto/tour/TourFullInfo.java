@@ -1,13 +1,12 @@
     package quvoncuz.dto.tour;
 
-import lombok.Data;
-import quvoncuz.enums.TourStatus;
+    import lombok.Data;
+    import quvoncuz.enums.TourStatus;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+    import java.math.BigDecimal;
+    import java.time.LocalDate;
 
-@Data
+    @Data
 public class TourFullInfo {
     private Long id;
     private Long agencyId;

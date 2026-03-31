@@ -1,6 +1,5 @@
 package quvoncuz.service;
 
-import org.springframework.stereotype.Service;
 import quvoncuz.dto.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
@@ -8,7 +7,6 @@ import quvoncuz.enums.Role;
 
 import java.util.List;
 
-@Service
 public interface ProfileService {
     public ProfileEntity create(RegistrationRequestDTO dto);
 

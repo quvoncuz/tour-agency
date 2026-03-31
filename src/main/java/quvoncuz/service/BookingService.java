@@ -1,13 +1,11 @@
 package quvoncuz.service;
 
-import org.springframework.stereotype.Service;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.entities.BookingEntity;
 
 import java.util.List;
 
-@Service
 public interface BookingService {
 
     public BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId);

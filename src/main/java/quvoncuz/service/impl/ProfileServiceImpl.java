@@ -1,7 +1,9 @@
 package quvoncuz.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import quvoncuz.dto.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
@@ -12,11 +14,11 @@ import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+@Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 

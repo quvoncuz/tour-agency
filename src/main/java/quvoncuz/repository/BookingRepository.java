@@ -1,12 +1,11 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.BookingEntity;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.exceptions.NotFoundException;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;

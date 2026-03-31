@@ -2,7 +2,6 @@ package quvoncuz.dto.agency;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import quvoncuz.enums.AgencyStatus;
 
 @Data
 @AllArgsConstructor

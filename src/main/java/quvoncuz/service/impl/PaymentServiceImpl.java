@@ -1,6 +1,7 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
 import quvoncuz.entities.BookingEntity;
@@ -17,6 +18,7 @@ import quvoncuz.service.PaymentService;
 
 import java.util.List;
 
+@Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 

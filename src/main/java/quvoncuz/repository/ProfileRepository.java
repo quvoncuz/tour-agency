@@ -1,13 +1,12 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.ProfileEntity;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
 import quvoncuz.exceptions.NotFoundException;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;

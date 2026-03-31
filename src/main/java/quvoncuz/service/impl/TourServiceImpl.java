@@ -18,6 +18,7 @@ import quvoncuz.service.TourService;
 
 import java.util.List;
 
+@Service
 @RequiredArgsConstructor
 public class TourServiceImpl implements TourService {
 

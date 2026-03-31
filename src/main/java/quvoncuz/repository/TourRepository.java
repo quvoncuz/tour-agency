@@ -1,12 +1,11 @@
 package quvoncuz.repository;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Repository;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.NotFoundException;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

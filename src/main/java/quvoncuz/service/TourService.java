@@ -1,6 +1,5 @@
 package quvoncuz.service;
 
-import org.springframework.stereotype.Service;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
@@ -8,7 +7,6 @@ import quvoncuz.dto.tour.UpdateTourRequestDTO;
 
 import java.util.List;
 
-@Service
 public interface TourService {
 
     TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId);
