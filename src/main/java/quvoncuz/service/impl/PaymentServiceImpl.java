@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
@@ -21,6 +23,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
+
+    private final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
@@ -72,11 +76,13 @@ public class PaymentServiceImpl implements PaymentService {
         profileRepository.createOrReplace(profiles, false);
         paymentRepository.createOrUpdate(payments, false);
         bookingRepository.createOrUpdate(bookings, false);
+        logger.info("Payment processed successfully for user ID: {}, tour ID: {}, booking ID: {}", userId, dto.getTourId(), dto.getBookingId());
     }
 
     // ADMIN
     @Override
     public List<PaymentShortInfo> findAll(int page, int size) {
+        logger.info("Admin requested all payments with pagination - page: {}, size: {}", page, size);
         return paymentRepository.findAll()
                 .stream()
                 .map(PaymentMapper::toShortInfo)
@@ -86,6 +92,7 @@ public class PaymentServiceImpl implements PaymentService {
     // ADMIN and USER himself
     @Override
     public List<PaymentShortInfo> findAllByUserId(Long userId, int page, int size) {
+        logger.info("User with ID: {} requested their payment history with pagination - page: {}, size: {}", userId, page, size);
         return paymentRepository.findAll()
                 .stream()
                 .filter(p -> p.getUserId().equals(userId))
@@ -106,6 +113,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .toList();
         }
 
+        logger.info("User with ID: {} requested payment history for tour ID: {} with pagination - page: {}, size: {}", userId, tourId, page, size);
         return paymentRepository.findAll()
                 .stream()
                 .filter(p -> p.getTourId().equals(tourId)

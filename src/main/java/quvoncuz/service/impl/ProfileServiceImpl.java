@@ -2,6 +2,8 @@ package quvoncuz.service.impl;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.ProfileDTO;
@@ -22,6 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
+    private final Logger logger = LoggerFactory.getLogger(ProfileServiceImpl.class);
     private final ProfileRepository profileRepository;
 
     @Value("${admin.default.username}")
@@ -48,9 +51,10 @@ public class ProfileServiceImpl implements ProfileService {
                     false,
                     true
             );
+            logger.info("Creating default admin with username: {}", adminUsername);
             profileRepository.createOrReplace(List.of(admin), true);
         } else {
-            System.out.printf("Default admin user already exists: %s%n", adminUsername);
+            logger.info("Default admin already exists with username: {}", adminUsername);
         }
     }
 
@@ -72,6 +76,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         profileRepository.createOrReplace(List.of(profile), true);
 
+        logger.info("Created new profile with username: {}", profile.getUsername());
         return profile;
     }
 
@@ -114,6 +119,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Profile with id " + id + " not found"));
         allProfile.remove(profile);
+        logger.info("Deleted profile with id: {}", id);
         profileRepository.createOrReplace(allProfile, false);
         return true;
     }
@@ -126,6 +132,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
+        logger.info("Retrieved profile with id: {} for admin with id: {}", id, adminId);
         return allProfile
                 .stream()
                 .filter(profile -> profile.getId().equals(id))
@@ -142,6 +149,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
+        logger.info("Retrieved all profiles for admin with id: {}", adminId);
         return allProfile
                 .stream()
                 .map(ProfileMapper::toDTO)
@@ -155,6 +163,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .filter(p -> p.getId().equals(userId)).findFirst()
                 .orElseThrow(() -> new NotFoundException("Profile with id " + userId + " not found"))
                 .setRole(role);
+        logger.info("Updated role to {} for profile with id: {}", role, userId);
         profileRepository.createOrReplace(all, false);
     }
 }

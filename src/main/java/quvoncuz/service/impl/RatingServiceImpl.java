@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.UpdateRatingRequestDTO;
@@ -21,6 +23,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class RatingServiceImpl implements RatingService {
 
+    private final Logger logger = LoggerFactory.getLogger(RatingServiceImpl.class);
+
     private final RatingRepository ratingRepository;
     private final BookingRepository bookingRepository;
 
@@ -38,6 +42,7 @@ public class RatingServiceImpl implements RatingService {
         rating.setComment(dto.getComment());
         requireCompleteBooking(userId, dto.getSourceId(), dto.getType());
         ratingRepository.createOrReplace(List.of(rating), true);
+        logger.info("User {} created a rating for source {} of type {}", userId, dto.getSourceId(), dto.getType());
     }
 
     @Override
@@ -52,6 +57,7 @@ public class RatingServiceImpl implements RatingService {
         rating.setStars(dto.getStars());
         rating.setComment(dto.getComment());
         ratingRepository.createOrReplace(allRating, false);
+        logger.info("User {} updated a rating for source {} of type {}", userId, dto.getSourceId(), dto.getType());
     }
 
     @Override
@@ -62,10 +68,12 @@ public class RatingServiceImpl implements RatingService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Rating not found"));
         ratingRepository.deleteById(ratingId);
+        logger.info("User {} deleted a rating with id {}", userId, ratingId);
     }
 
     @Override
     public List<RatingEntity> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size) {
+        logger.info("Finding ratings for source {} of type {}, page {}, size {}", sourceId, type, page, size);
         return ratingRepository.findAll().stream()
                 .filter(r -> r.getSourceId().equals(sourceId) && r.getType() == type)
                 .skip((long) (page - 1) * size)
@@ -75,6 +83,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public List<RatingEntity> findByUserId(Long userId) {
+        logger.info("Finding ratings for user {}", userId);
         return ratingRepository.findAll().stream()
                 .filter(r -> r.getUserId().equals(userId))
                 .toList();
@@ -83,6 +92,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public Optional<RatingEntity> findByUserIdAndSourceIdAndType(
             Long userId, Long sourceId, RatingType type) {
+        logger.info("Finding rating for user {}, source {}, type {}", userId, sourceId, type);
         return ratingRepository.findAll().stream()
                 .filter(r -> r.getUserId().equals(userId)
                         && r.getSourceId().equals(sourceId)
@@ -92,6 +102,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public double getAverageStars(Long sourceId, RatingType type) {
+        logger.info("Calculating average stars for source {} of type {}", sourceId, type);
         return ratingRepository.findAll().stream()
                 .filter(r -> r.getSourceId().equals(sourceId) && r.getType() == type)
                 .mapToInt(RatingEntity::getStars)
@@ -101,6 +112,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public boolean hasRated(Long userId, Long sourceId, RatingType target) {
+        logger.info("Checking if user {} has rated source {} of type {}", userId, sourceId, target);
         return existsByUserIdAndSourceIdAndType(userId, sourceId, target);
     }
 
