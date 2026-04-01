@@ -7,12 +7,14 @@ import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
 import quvoncuz.entities.AgencyEntity;
+import quvoncuz.entities.SavedTourEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
+import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.TourService;
 
@@ -25,6 +27,7 @@ public class TourServiceImpl implements TourService {
     private final AgencyRepository agencyRepository;
     private final ProfileRepository profileRepository;
     private final TourRepository tourRepository;
+    private final SavedTourRepository savedTourRepository;
 
     @Override
     public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
@@ -103,6 +106,23 @@ public class TourServiceImpl implements TourService {
     public TourFullInfo getById(Long id) {
         TourEntity tourById = tourRepository.findById(id);
         return TourMapper.toFullInfo(tourById);
+    }
+
+    @Override
+    public List<TourShortInfo> getAllSavedTour(Long userId, int size, int page) {
+        List<Long> tourIds = savedTourRepository.findAllByUserId(userId)
+                .stream()
+                .filter(t -> t.getUserId().equals(userId))
+                .mapToLong(SavedTourEntity::getTourId)
+                .boxed()
+                .toList();
+
+        return getAllTour()
+                .stream()
+                .filter(t -> tourIds.contains(t.getId()))
+                .skip((long) size * (page - 1))
+                .limit(size)
+                .toList();
     }
 
     @Override

@@ -21,5 +21,7 @@ public interface TourService {
 
     TourFullInfo getById(Long id);
 
+    List<TourShortInfo> getAllSavedTour(Long userId, int size, int page);
+
     List<TourShortInfo> search(String query);
 }
