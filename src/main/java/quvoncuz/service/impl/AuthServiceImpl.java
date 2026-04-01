@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.auth.AuthResponse;
 import quvoncuz.dto.auth.LoginRequestDTO;
@@ -19,6 +21,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final ProfileService profileService;
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
     private static final Pattern pattern = Pattern.compile(EMAIL_REGEX);
@@ -39,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
         ProfileEntity profile = profileService.create(dto);
 
         String token = Base64.getEncoder().encodeToString((profile.getUsername() + ":" + profile.getPassword()).getBytes());
-
+        logger.info("New user registered: {}, token: {}", profile.getUsername(), token);
         return new AuthResponse(
                  profile.getUsername(),
                 profile.getRole().name(),
@@ -57,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidException("Profile is not active");
         }
 
+        logger.info("User logged in: {}", profile.getUsername());
         return new AuthResponse(
                 profile.getUsername(),
                 profile.getRole().name(),
