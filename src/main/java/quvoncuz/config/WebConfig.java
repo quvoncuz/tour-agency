@@ -16,7 +16,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebMvc
-@ComponentScan("quvoncuz")
+@ComponentScan(basePackages = "quvoncuz")
 @PropertySource("classpath:application.properties")
 public class WebConfig implements WebMvcConfigurer {
 
