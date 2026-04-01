@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
@@ -21,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgencyServiceImpl implements AgencyService {
 
+    private final Logger logger = LoggerFactory.getLogger(AgencyServiceImpl.class);
     private final ProfileService profileService;
     private final AgencyRepository agencyRepository;
     private final ProfileRepository profileRepository;
@@ -32,6 +35,7 @@ public class AgencyServiceImpl implements AgencyService {
             throw new PermissionDeniedException("You have a agency already");
         }
         AgencyEntity agency = new AgencyEntity();
+        agency.setId(profile.getId()); // agency id and owner id the same
         agency.setName(dto.getName());
         agency.setPhone(dto.getPhone());
         agency.setEmail(dto.getEmail());
@@ -40,6 +44,7 @@ public class AgencyServiceImpl implements AgencyService {
         agency.setAddress(dto.getAddress());
         agency.setStatus(AgencyStatus.PENDING);
         agencyRepository.createOrUpdate(List.of(agency), true);
+        logger.info("User with id {} applied for agency with id {}", userId, agency.getId());
         return AgencyMapper.toDTO(agency);
     }
 
@@ -64,6 +69,7 @@ public class AgencyServiceImpl implements AgencyService {
             agency.setStatus(AgencyStatus.REJECTED);
         }
         agencyRepository.createOrUpdate(allAgencies, false);
+        logger.info("User with id {} {} agency with id {}", userId, dto.getApprove() ? "approved" : "rejected", agency.getId());
         return true;
     }
 
@@ -72,6 +78,7 @@ public class AgencyServiceImpl implements AgencyService {
         if (!profile.getRole().equals(Role.ADMIN)) {
             throw new PermissionDeniedException("You don't have permission to view pending agencies");
         }
+        logger.info("Admin with id {} requested pending agencies", userId);
         return agencyRepository.getAllAgencies()
                 .stream()
                 .filter(agency -> agency.getStatus() == AgencyStatus.PENDING)
@@ -80,6 +87,7 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     public List<AgencyFullInfo> getAllAgencies() {
+        logger.info("Requested all agencies");
         return agencyRepository.getAllAgencies()
                 .stream()
                 .map(AgencyMapper::toFullInfo)
@@ -104,6 +112,7 @@ public class AgencyServiceImpl implements AgencyService {
         agency.setCity(dto.getCity());
         agency.setAddress(dto.getAddress());
         agencyRepository.createOrUpdate(allAgencies, false);
+        logger.info("User with id {} updated agency with id {}", userId, agency.getId());
         return AgencyMapper.toFullInfo(agency);
     }
 
@@ -117,11 +126,13 @@ public class AgencyServiceImpl implements AgencyService {
         allAgencies.stream().filter(a -> a.getId().equals(agencyId)).findFirst().orElseThrow(() -> new NotFoundException("Agency not found"));
         allAgencies.removeIf(a -> a.getId().equals(agencyId));
         agencyRepository.createOrUpdate(allAgencies, false);
+        logger.info("Admin with id {} deleted agency with id {}", userId, agencyId);
         return true;
     }
 
     @Override
     public AgencyDTO findById(Long agencyId) {
+        logger.info("Requested agency with id {}", agencyId);
         return agencyRepository.getAllAgencies()
                 .stream()
                 .filter(a -> a.getId().equals(agencyId))
