@@ -91,6 +91,15 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
+    public List<TourShortInfo> getAllActiveTour() {
+        return tourRepository.findAll()
+                .stream()
+                .filter(tour -> tour.getIsActive() && tour.getStartDate().isAfter(java.time.LocalDate.now()))
+                .map(TourMapper::toShortInfo)
+                .toList();
+    }
+
+    @Override
     public TourFullInfo getById(Long id) {
         TourEntity tourById = tourRepository.findById(id);
         return TourMapper.toFullInfo(tourById);

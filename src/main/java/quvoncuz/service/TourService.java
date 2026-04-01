@@ -15,9 +15,11 @@ public interface TourService {
 
     boolean deleteTour(Long tourId, Long ownerId);
 
-    public List<TourShortInfo> getAllTour();
+    List<TourShortInfo> getAllTour();
 
-    public TourFullInfo getById(Long id);
+    List<TourShortInfo> getAllActiveTour();
 
-    public List<TourShortInfo> search(String query);
+    TourFullInfo getById(Long id);
+
+    List<TourShortInfo> search(String query);
 }
