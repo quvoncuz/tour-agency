@@ -10,7 +10,7 @@ public interface BookingService {
 
     public BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId);
 
-    public List<BookingEntity> findAllByUserId(Long userId, Long adminId, int page, int size);
+    public List<BookingEntity> findAllByUserId(Long adminId, Long userId, int page, int size);
 
     public List<BookingEntity> findAllByTourId(Long userId, Long adminId, int page, int size);
 

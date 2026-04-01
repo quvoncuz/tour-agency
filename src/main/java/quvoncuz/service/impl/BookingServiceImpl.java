@@ -1,25 +1,22 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.dto.payment.PaymentRequestDTO;
-import quvoncuz.entities.BookingEntity;
-import quvoncuz.entities.PaymentEntity;
-import quvoncuz.entities.ProfileEntity;
-import quvoncuz.entities.TourEntity;
+import quvoncuz.entities.*;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.PaymentStatus;
+import quvoncuz.enums.Role;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.mapper.BookingMapper;
 import quvoncuz.mapper.PaymentMapper;
-import quvoncuz.repository.BookingRepository;
-import quvoncuz.repository.PaymentRepository;
-import quvoncuz.repository.ProfileRepository;
-import quvoncuz.repository.TourRepository;
+import quvoncuz.repository.*;
 import quvoncuz.service.BookingService;
 
 import java.math.BigDecimal;
@@ -29,10 +26,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
+    private final Logger logger = LoggerFactory.getLogger(BookingServiceImpl.class);
     private final BookingRepository bookingRepository;
     private final TourRepository tourRepository;
     private final ProfileRepository profileRepository;
     private final PaymentRepository paymentRepository;
+    private final AgencyRepository agencyRepository;
 
 
     @Override
@@ -82,12 +81,17 @@ public class BookingServiceImpl implements BookingService {
         paymentRepository.createOrUpdate(List.of(payment), true);
 
         bookingRepository.createOrUpdate(List.of(booking), true);
+        logger.info("Booking created successfully for tourId: {} and userId: {}", dto.getTourId(), userId);
         return BookingMapper.toFullInfo(booking);
-
     }
 
     @Override
-    public List<BookingEntity> findAllByUserId(Long userId, Long adminId, int page, int size) {
+    public List<BookingEntity> findAllByUserId(Long userId, Long loginId, int page, int size) {
+        ProfileEntity profile = profileRepository.findById(loginId);
+        if (profile.getRole() != Role.ADMIN || !loginId.equals(userId)) {
+            throw new IllegalArgumentException("Users can only view their own bookings. userId: " + userId + ", loginId: " + loginId);
+        }
+        logger.info("Finding all bookings for userId: {} with pagination - page: {}, size: {}", userId, page, size);
         return bookingRepository.findAll()
                 .stream()
                 .filter(booking -> booking.getUserId().equals(userId))
@@ -97,20 +101,43 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingEntity> findAllByTourId(Long userId, Long adminId, int page, int size) {
-        return bookingRepository.findAll()
+    public List<BookingEntity> findAllByTourId(Long tourId, Long loginId, int page, int size) {
+        logger.info("Finding all bookings for tourId: {} with pagination - page: {}, size: {}", tourId, page, size);
+        ProfileEntity profile = profileRepository.findById(loginId);
+        List<TourEntity> tourByAgencyId = tourRepository.findAll()
                 .stream()
-                .filter(booking -> booking.getTourId().equals(userId))
+                .filter(tour -> tour.getAgencyId().equals(loginId))
+                .toList();
+
+        List<BookingEntity> allBooking = bookingRepository.findAll();
+        return allBooking
+                .stream()
+                .filter(booking -> booking.getTourId().equals(tourId)
+                        && (profile.getRole() == Role.ADMIN
+                        || booking.getUserId().equals(loginId)
+                        || tourByAgencyId.stream()
+                                .anyMatch(tour -> tour.getId().equals(booking.getTourId()))))
                 .skip((long) (page - 1) * size)
                 .limit(size)
                 .toList();
     }
 
     @Override
-    public List<BookingEntity> findAllByAgencyId(Long userId, Long adminId, int page, int size) {
+    public List<BookingEntity> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
+        ProfileEntity profile = profileRepository.findById(loginId);
+        AgencyEntity agency = agencyRepository.findById(agencyId);
+        if (!(agency.getOwnerId().equals(loginId) || profile.getRole().equals(Role.ADMIN))) {
+            throw new IllegalArgumentException("Only the agency owner or admin can view bookings for this agency. agencyId: " + agencyId + ", loginId: " + loginId);
+        }
+        List<TourEntity> tourByAgencyId = tourRepository.findAll()
+                .stream()
+                .filter(tour -> tour.getAgencyId().equals(agencyId))
+                .toList();
+        logger.info("Finding all bookings for agencyId: {} with pagination - page: {}, size: {}", loginId, page, size);
         return bookingRepository.findAll()
                 .stream()
-                .filter(booking -> booking.getTourId().equals(userId))
+                .filter(booking -> tourByAgencyId.stream()
+                        .anyMatch(tour -> tour.getId().equals(booking.getTourId())))
                 .skip((long) (page - 1) * size)
                 .limit(size)
                 .toList();
@@ -142,6 +169,7 @@ public class BookingServiceImpl implements BookingService {
         profileRepository.createOrReplace(allProfile, false);
         bookingRepository.createOrUpdate(allBooking, false);
 
+        logger.info("Booking canceled successfully for bookingId: {} and userId: {}", bookingId, userId);
         return true;
     }
 
@@ -203,6 +231,7 @@ public class BookingServiceImpl implements BookingService {
 
         tourRepository.createOrUpdate(allTour, false);
 
+        logger.info("Booking seats updated successfully for bookingId: {} and userId: {}", booking.getId(), user);
         return BookingMapper.toFullInfo(booking);
     }
 
