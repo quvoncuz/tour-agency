@@ -2,14 +2,20 @@ package quvoncuz.service;
 
 import quvoncuz.dto.agency.*;
 
+import java.util.List;
+
 public interface AgencyService {
-    public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId);
+    AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId);
 
-    public Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId);
+    Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId);
 
-    public AgencyFullInfo update(UpdateAgencyRequestDTO dto, Long userId);
+    List<AgencyShortInfo> getPendingAgencies(Long userId);
 
-    public Boolean deleteById(Long agencyId, Long userId);
+    List<AgencyFullInfo> getAllAgencies();
 
-    public AgencyDTO findById(Long agencyId);
+    AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId);
+
+    Boolean deleteById(Long agencyId, Long userId);
+
+    AgencyDTO findById(Long agencyId);
 }

@@ -1,6 +1,7 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.RatingType;
@@ -18,12 +19,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class RatingRepository {
 
-    private static final String FILE_NAME = "ratings.csv";
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,userId,sourceId,stars,comment,target,createdAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public RatingRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_NAME = FILE_FOLDER + "ratings.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -39,10 +44,6 @@ public class RatingRepository {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend) {
-                writer.write(HEADER);
-                writer.newLine();
-            }
             for (RatingEntity r : ratings) {
                 if (r.getId() == null) {
                     r.setId(idGenerator.getAndIncrement());
@@ -102,12 +103,7 @@ public class RatingRepository {
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 RatingEntity entity = fromCsvLine(line);
                 if (entity != null) ratings.add(entity);

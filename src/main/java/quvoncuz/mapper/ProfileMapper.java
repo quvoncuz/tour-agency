@@ -7,14 +7,14 @@ import quvoncuz.entities.ProfileEntity;
 @Component
 public class ProfileMapper {
 
-    public static ProfileDTO toDTO(ProfileEntity profile){
-        ProfileDTO dto = new ProfileDTO();
-        dto.setId(profile.getId());
-        dto.setFullName(profile.getFullName());
-        dto.setUsername(profile.getUsername());
-        dto.setEmail(profile.getEmail());
-        dto.setGender(profile.getGender());
-        return dto;
+    public static ProfileDTO toDTO(ProfileEntity profile) {
+        return ProfileDTO.builder()
+                .id(profile.getId())
+                .fullName(profile.getFullName())
+                .username(profile.getUsername())
+                .email(profile.getEmail())
+                .gender(profile.getGender())
+                .token(null).build();
     }
 
 }

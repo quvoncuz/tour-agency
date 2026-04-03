@@ -1,13 +1,13 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.BookingEntity;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -19,12 +19,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class BookingRepository {
 
-    private final String FILE_NAME = "booking.csv";
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,userId,tourId,seatsBooked,paidAmount,totalPrice,status,note,bookedAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public BookingRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_NAME = FILE_FOLDER + "booking.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -40,10 +44,6 @@ public class BookingRepository {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend) {
-                writer.write(HEADER);
-                writer.newLine();
-            }
             for (BookingEntity b : bookings) {
                 if (b.getId() == null) {
                     b.setId(idGenerator.getAndIncrement());
@@ -135,12 +135,7 @@ public class BookingRepository {
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean firstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 BookingEntity entity = fromCsvLine(line);
                 if (entity != null) bookings.add(entity);
@@ -174,8 +169,8 @@ public class BookingRepository {
                     Long.parseLong(s[1].trim()),
                     Long.parseLong(s[2].trim()),
                     Integer.parseInt(s[3].trim()),
-                    new BigDecimal(s[4].trim()),
-                    new BigDecimal(s[5].trim()),
+                    Long.parseLong(s[4].trim()),
+                    Long.parseLong(s[5].trim()),
                     BookingStatus.valueOf(s[6].trim()),
                     unescape(s[7]),
                     LocalDateTime.parse(s[8].trim())

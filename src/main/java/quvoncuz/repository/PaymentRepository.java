@@ -1,12 +1,12 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.PaymentStatus;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -18,12 +18,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class PaymentRepository {
-    private final String FILE_NAME = "booking.csv";
+
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,userId,tourId,bookingId,amount,status,createdAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public PaymentRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_NAME = FILE_FOLDER + "booking.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -39,10 +44,6 @@ public class PaymentRepository {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend) {
-                writer.write(HEADER);
-                writer.newLine();
-            }
             for (PaymentEntity p : payments) {
                 if (p.getId() == null) {
                     p.setId(idGenerator.getAndIncrement());
@@ -122,12 +123,7 @@ public class PaymentRepository {
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean firstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 PaymentEntity entity = fromCsvLine(line);
                 if (entity != null) bookings.add(entity);
@@ -159,7 +155,7 @@ public class PaymentRepository {
                     Long.parseLong(s[1].trim()),
                     Long.parseLong(s[2].trim()),
                     Long.parseLong(s[2].trim()),
-                    new BigDecimal(s[3].trim()),
+                    Long.parseLong(s[3].trim()),
                     PaymentStatus.valueOf(s[5].trim()),
                     LocalDateTime.parse(s[7].trim())
             );

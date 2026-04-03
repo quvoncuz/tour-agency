@@ -16,7 +16,6 @@ import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,12 +39,12 @@ public class ProfileServiceImpl implements ProfileService {
     public void initDefaultAdmin() {
         if (!existsByUsername(adminUsername)) {
             ProfileEntity admin = new ProfileEntity(
-                    null,
+                    1L,
                     "admin",
                     adminUsername,
                     adminEmail,
                     adminPassword,
-                    BigDecimal.valueOf(0L),
+                    0L,
                     Role.ADMIN,
                     Gender.MALE,
                     false,
@@ -67,7 +66,7 @@ public class ProfileServiceImpl implements ProfileService {
                 dto.getUsername(),
                 dto.getEmail(),
                 dto.getPassword(),
-                BigDecimal.valueOf(0),
+                0L,
                 Role.USER,
                 dto.getGender(),
                 false,
@@ -107,7 +106,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public boolean deleteById(Long id, Long adminId) {
+    public Boolean deleteById(Long id, Long adminId) {
         List<ProfileEntity> allProfile = profileRepository.findAll();
         ProfileEntity admin = allProfile.stream().filter(p -> p.getId().equals(adminId)).findFirst()
                 .orElseThrow(() -> new NotFoundException("Admin with id " + adminId + " not found"));
@@ -142,7 +141,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public List<ProfileDTO> getAllProfiles(Long adminId) {
+    public List<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
         List<ProfileEntity> allProfile = profileRepository.findAll();
         ProfileEntity admin = allProfile.stream().filter(p -> p.getId().equals(adminId)).findFirst()
                 .orElseThrow(() -> new NotFoundException("Admin with id " + adminId + " not found"));
@@ -152,6 +151,8 @@ public class ProfileServiceImpl implements ProfileService {
         logger.info("Retrieved all profiles for admin with id: {}", adminId);
         return allProfile
                 .stream()
+                .skip((long) (page - 1) * size)
+                .limit(size)
                 .map(ProfileMapper::toDTO)
                 .toList();
     }

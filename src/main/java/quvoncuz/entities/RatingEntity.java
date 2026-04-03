@@ -1,12 +1,14 @@
 package quvoncuz.entities;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import quvoncuz.enums.RatingType;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @AllArgsConstructor
 public class RatingEntity {
     private Long id;

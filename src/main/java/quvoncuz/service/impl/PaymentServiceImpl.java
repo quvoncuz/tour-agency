@@ -4,11 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import quvoncuz.dto.payment.PaymentFullInfo;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
-import quvoncuz.entities.BookingEntity;
-import quvoncuz.entities.PaymentEntity;
-import quvoncuz.entities.ProfileEntity;
+import quvoncuz.entities.*;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.PaymentStatus;
 import quvoncuz.enums.Role;
@@ -25,7 +24,6 @@ import java.util.List;
 public class PaymentServiceImpl implements PaymentService {
 
     private final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
-
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ProfileRepository profileRepository;
@@ -33,7 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final AgencyRepository agencyRepository;
 
     @Override
-    public void processPayment(PaymentRequestDTO dto, Long userId) {
+    public PaymentFullInfo processPayment(PaymentRequestDTO dto, Long userId) {
 
         List<ProfileEntity> profiles = profileRepository.findAll();
         ProfileEntity profile = profiles.stream()
@@ -69,7 +67,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new DoNotMatchException("Insufficient balance");
         }
 
-        profile.setBalance(profile.getBalance().subtract(payment.getAmount()));
+        profile.setBalance(profile.getBalance() - payment.getAmount());
         payment.setStatus(PaymentStatus.PAID);
         booking.setStatus(BookingStatus.CONFIRMED);
 
@@ -77,14 +75,24 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.createOrUpdate(payments, false);
         bookingRepository.createOrUpdate(bookings, false);
         logger.info("Payment processed successfully for user ID: {}, tour ID: {}, booking ID: {}", userId, dto.getTourId(), dto.getBookingId());
+
+        return PaymentMapper.toFullInfo(payment);
     }
 
     // ADMIN
     @Override
-    public List<PaymentShortInfo> findAll(int page, int size) {
+    public List<PaymentShortInfo> findAll(Long userId, int page, int size) {
+        ProfileEntity profile = profileRepository.findById(userId);
+        if (profile.getRole() != Role.ADMIN) {
+            throw new DoNotMatchException("Only admins can access all payments");
+        }
         logger.info("Admin requested all payments with pagination - page: {}, size: {}", page, size);
         return paymentRepository.findAll()
                 .stream()
+                // Sort by createdAt descending
+                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                .skip((long) (page - 1) * size)
+                .limit(size)
                 .map(PaymentMapper::toShortInfo)
                 .toList();
     }
@@ -96,6 +104,10 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findAll()
                 .stream()
                 .filter(p -> p.getUserId().equals(userId))
+                // Sort by createdAt descending
+                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                .skip((long) (page - 1) * size)
+                .limit(size)
                 .map(PaymentMapper::toShortInfo)
                 .toList();
     }
@@ -109,15 +121,21 @@ public class PaymentServiceImpl implements PaymentService {
             return paymentRepository.findAll()
                     .stream()
                     .filter(p -> p.getTourId().equals(tourId))
+                    // Sort by createdAt descending
+                    .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
                     .map(PaymentMapper::toShortInfo)
                     .toList();
         }
 
         logger.info("User with ID: {} requested payment history for tour ID: {} with pagination - page: {}, size: {}", userId, tourId, page, size);
+        TourEntity tour = tourRepository.findById(tourId);
+        AgencyEntity agency = agencyRepository.findById(tour.getAgencyId());
         return paymentRepository.findAll()
                 .stream()
                 .filter(p -> p.getTourId().equals(tourId)
-                        && agencyRepository.findById(tourRepository.findById(tourId).getAgencyId()).getOwnerId().equals(userId))
+                        && agency.getOwnerId().equals(userId))
+                // Sort by createdAt descending
+                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
                 .map(PaymentMapper::toShortInfo)
                 .toList();
     }

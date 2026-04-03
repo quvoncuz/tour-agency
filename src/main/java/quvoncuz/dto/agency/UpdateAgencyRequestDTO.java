@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class UpdateAgencyRequestDTO {
-    private Long id;
     private String name;
     private String phone;
     private String email;

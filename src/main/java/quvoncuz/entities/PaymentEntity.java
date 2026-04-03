@@ -1,14 +1,15 @@
 package quvoncuz.entities;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import quvoncuz.enums.PaymentStatus;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentEntity {
@@ -17,7 +18,7 @@ public class PaymentEntity {
     private Long userId;
     private Long tourId;
     private Long bookingId;
-    private BigDecimal amount;
+    private Long amount;
     private PaymentStatus status;
     private LocalDateTime createdAt;
 

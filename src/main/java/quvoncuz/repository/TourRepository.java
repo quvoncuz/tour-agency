@@ -1,13 +1,13 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,8 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class TourRepository {
 
-
-    private static final String FILE_NAME = "tours.csv";
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,agencyId,title,description,destination,price," +
                     "durationDays,maxSeats,availableSeats,startDate,endDate," +
@@ -29,6 +28,10 @@ public class TourRepository {
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public TourRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_NAME = FILE_FOLDER + "tours.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -39,14 +42,11 @@ public class TourRepository {
                 .orElse(0L);
         idGenerator.set(maxId + 1);
     }
+
     public void createOrUpdate(List<TourEntity> tours, boolean isAppend) {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend) {
-                writer.write(HEADER);
-                writer.newLine();
-            }
             for (TourEntity t : tours) {
                 if (t.getId() == null) {
                     t.setId(idGenerator.getAndIncrement());
@@ -114,12 +114,7 @@ public class TourRepository {
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 TourEntity entity = fromCsvLine(line);
                 if (entity != null) tours.add(entity);
@@ -161,7 +156,7 @@ public class TourRepository {
                     unescape(s[2]),
                     unescape(s[3]),
                     unescape(s[4]),
-                    new BigDecimal(s[5].trim()),
+                    Long.parseLong(s[5].trim()),
                     Integer.parseInt(s[6].trim()),
                     Integer.parseInt(s[7].trim()),
                     Integer.parseInt(s[8].trim()),

@@ -11,9 +11,9 @@ public interface TourService {
 
     TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId);
 
-    TourFullInfo updateTour(UpdateTourRequestDTO dto, Long ownerId);
+    TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId);
 
-    boolean deleteTour(Long tourId, Long ownerId);
+    Boolean deleteTour(Long tourId, Long ownerId);
 
     List<TourShortInfo> getAllTour();
 

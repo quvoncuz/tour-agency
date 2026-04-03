@@ -1,6 +1,7 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Gender;
@@ -8,7 +9,6 @@ import quvoncuz.enums.Role;
 import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,12 +20,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class ProfileRepository {
 
-    private static final String FILE_NAME = "profiles.csv";
+    private final String FILE_FOLDER;
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,fullName,username,email,password,balance,role,gender,isCreateAgency,isActive";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public ProfileRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_FOLDER = FILE_FOLDER;
+        this.FILE_NAME = FILE_FOLDER + "profiles.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -38,11 +44,19 @@ public class ProfileRepository {
     }
 
     public void createOrReplace(List<ProfileEntity> profiles, boolean isAppend) {
+        File file = new File(FILE_NAME);
+        File folder = new File(FILE_FOLDER);
+        if (!file.exists()) {
+            folder.mkdirs();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
-                new FileWriter(FILE_NAME, StandardCharsets.UTF_8, false))) {
-            writer.write(HEADER);
-            writer.newLine();
+                new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
             for (ProfileEntity p : profiles) {
                 if (p.getId() == null) {
                     p.setId(idGenerator.getAndIncrement());
@@ -134,19 +148,23 @@ public class ProfileRepository {
 
     private List<ProfileEntity> readFromFile() {
         File file = new File(FILE_NAME);
-        if (!file.exists()) return new LinkedList<>();
+        File folder = new File(FILE_FOLDER);
+        if (!file.exists()) {
+            folder.mkdirs();
+            try {
+                file.createNewFile();
+                return new LinkedList<>();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         List<ProfileEntity> profiles = new LinkedList<>();
         try (BufferedReader reader = new BufferedReader(
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 ProfileEntity entity = fromCsvLine(line);
                 if (entity != null) profiles.add(entity);
@@ -183,7 +201,7 @@ public class ProfileRepository {
                     unescape(s[2]),
                     unescape(s[3]),
                     unescape(s[4]),
-                    new BigDecimal(s[5].trim()),
+                    Long.parseLong(s[5].trim()),
                     Role.valueOf(s[6].trim()),
                     Gender.valueOf(s[7].trim()),
                     Boolean.parseBoolean(s[8].trim()),  // ✅ getBoolean emas!

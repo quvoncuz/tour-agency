@@ -7,52 +7,53 @@ import quvoncuz.dto.payment.PaymentShortInfo;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.PaymentStatus;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class PaymentMapper {
 
     public static PaymentDTO toDTO(PaymentEntity payment) {
-        return new PaymentDTO(
-                payment.getId(),
-                payment.getUserId(),
-                payment.getBookingId(),
-                payment.getAmount(),
-                payment.getStatus(),
-                payment.getCreatedAt()
-        );
+        return PaymentDTO.builder()
+                .id(payment.getId())
+                .userId(payment.getUserId())
+                .bookingId(payment.getBookingId())
+                .amount(payment.getAmount())
+                .status(payment.getStatus())
+                .createdDate(payment.getCreatedAt())
+                .build();
     }
 
-    public static PaymentFullInfo toFullInfo(PaymentEntity entity){
-        return new PaymentFullInfo(
-                entity.getTourId(),
-                entity.getBookingId(),
-                entity.getAmount(),
-                entity.getStatus(),
-                LocalDate.from(entity.getCreatedAt())
-        );
+    public static PaymentFullInfo toFullInfo(PaymentEntity entity) {
+        return PaymentFullInfo.builder()
+                .tourId(entity.getTourId())
+                .bookingId(entity.getBookingId())
+                .amount(entity.getAmount())
+                .status(entity.getStatus())
+                .createdDate(LocalDate.from(entity.getCreatedAt()))
+                .build();
     }
 
-    public static PaymentShortInfo toShortInfo(PaymentEntity entity){
-        return new PaymentShortInfo(
-                entity.getId(),
-                entity.getTourId(),
-                entity.getBookingId(),
-                entity.getStatus()
-        );
+    public static PaymentShortInfo toShortInfo(PaymentEntity entity) {
+        return PaymentShortInfo.builder()
+                .id(entity.getId())
+                .tourId(entity.getTourId())
+                .bookingId(entity.getBookingId())
+                .status(entity.getStatus())
+                .build();
+
+
     }
 
-    public static PaymentEntity toEntity(PaymentRequestDTO dto, Long userId){
-        return new PaymentEntity(
-                null,
-                userId,
-                dto.getTourId(),
-                dto.getBookingId(),
-                BigDecimal.ONE,
-                PaymentStatus.PENDING,
-                LocalDateTime.now()
-        );
+    public static PaymentEntity toEntity(PaymentRequestDTO dto, Long userId) {
+        return PaymentEntity.builder()
+                .id(null)
+                .userId(userId)
+                .tourId(dto.getTourId())
+                .bookingId(dto.getBookingId())
+                .amount(0L)
+                .status(PaymentStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 
 }

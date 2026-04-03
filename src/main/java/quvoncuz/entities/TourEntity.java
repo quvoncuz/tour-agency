@@ -1,15 +1,16 @@
 package quvoncuz.entities;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import quvoncuz.enums.TourStatus;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class TourEntity {
@@ -18,7 +19,7 @@ public class TourEntity {
     private String title;
     private String description;
     private String destination;
-    private BigDecimal price;
+    private Long price;
     private Integer durationDays;
     private Integer maxSeats;
     private Integer availableSeats;

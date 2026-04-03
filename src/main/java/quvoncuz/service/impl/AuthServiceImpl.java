@@ -34,9 +34,9 @@ public class AuthServiceImpl implements AuthService {
         if (profileService.existsByUsername(dto.getUsername())) {
             throw new AlreadyExistsException("Username already exists!");
         }
-        if (!isValidEmail(dto.getEmail())){
-            throw new InvalidException("Invalid email");
-        }
+//        if (!isValidEmail(dto.getEmail())){
+//            throw new InvalidException("Invalid email");
+//        }
 
 
         ProfileEntity profile = profileService.create(dto);

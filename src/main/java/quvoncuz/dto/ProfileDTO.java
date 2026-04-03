@@ -1,9 +1,11 @@
 package quvoncuz.dto;
 
+import lombok.Builder;
 import lombok.Data;
 import quvoncuz.enums.Gender;
 
 @Data
+@Builder
 public class ProfileDTO {
     private Long id;
     private String fullName;

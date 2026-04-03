@@ -73,6 +73,7 @@ public class AgencyServiceImpl implements AgencyService {
         return true;
     }
 
+    @Override
     public List<AgencyShortInfo> getPendingAgencies(Long userId) {
         ProfileEntity profile = profileRepository.findById(userId);
         if (!profile.getRole().equals(Role.ADMIN)) {
@@ -86,6 +87,7 @@ public class AgencyServiceImpl implements AgencyService {
                 .toList();
     }
 
+    @Override
     public List<AgencyFullInfo> getAllAgencies() {
         logger.info("Requested all agencies");
         return agencyRepository.getAllAgencies()
@@ -95,12 +97,12 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
-    public AgencyFullInfo update(UpdateAgencyRequestDTO dto, Long userId) {
+    public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId) {
         List<AgencyEntity> allAgencies = agencyRepository.getAllAgencies();
         ProfileEntity profile = profileRepository.findById(userId);
         AgencyEntity agency = allAgencies
                 .stream()
-                .filter(a -> a.getId().equals(dto.getId())
+                .filter(a -> a.getId().equals(agencyId)
                         /*update if he is admin*/ && a.getOwnerId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Agency not found"));

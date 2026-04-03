@@ -1,9 +1,9 @@
 package quvoncuz.repository;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.SavedTourEntity;
-import quvoncuz.exceptions.NotFoundException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -16,12 +16,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Repository
 public class SavedTourRepository {
-    private static final String FILE_NAME = "savedtours.csv";
+
+    private final String FILE_NAME;
     private static final String HEADER =
             "id,userId,tourId,createdAt";
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final AtomicLong idGenerator = new AtomicLong(1);
+
+    public SavedTourRepository(@Value("${file.folder}") String FILE_FOLDER) {
+        this.FILE_NAME = FILE_FOLDER + "savedtours.csv";
+    }
 
     @PostConstruct
     public void getMaxId() {
@@ -37,10 +42,6 @@ public class SavedTourRepository {
         rwLock.writeLock().lock();
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(FILE_NAME, StandardCharsets.UTF_8, isAppend))) {
-            if (!isAppend) {
-                writer.write(HEADER);
-                writer.newLine();
-            }
             for (SavedTourEntity t : savedTours) {
                 if (t.getId() == null) {
                     t.setId(idGenerator.getAndIncrement());
@@ -101,12 +102,7 @@ public class SavedTourRepository {
                 new FileReader(FILE_NAME, StandardCharsets.UTF_8))) {
 
             String line;
-            boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) {
-                    isFirstLine = false;
-                    continue;
-                }
                 if (line.trim().isEmpty()) continue;
                 SavedTourEntity entity = fromCsvLine(line);
                 if (entity != null) tours.add(entity);

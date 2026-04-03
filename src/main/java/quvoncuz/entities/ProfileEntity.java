@@ -1,14 +1,14 @@
 package quvoncuz.entities;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
 
-import java.math.BigDecimal;
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProfileEntity {
@@ -17,7 +17,7 @@ public class ProfileEntity {
     private String username;
     private String email;
     private String password;
-    private BigDecimal balance = BigDecimal.valueOf(0);
+    private Long balance = 0L;
     private Role role;
     private Gender gender;
     private Boolean isCreateAgency = false;

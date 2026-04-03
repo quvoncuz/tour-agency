@@ -10,6 +10,7 @@ import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.SavedTourEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.AgencyStatus;
+import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.AgencyRepository;
@@ -31,29 +32,37 @@ public class TourServiceImpl implements TourService {
 
     @Override
     public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
-        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId);
+        AgencyEntity agency = agencyRepository.getAllAgencies()
+                .stream()
+                .peek(a -> System.out.println("Checking agency: " + a.getId() + " with ownerId: " + a.getOwnerId()))
+                .filter(a -> a.getId().equals(ownerId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Agency not found with id" + ownerId));
         if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)) {
             throw new PermissionDeniedException("You don't have access to create tour!");
         }
 
         TourEntity tour = TourMapper.toEntity(dto);
         tour.setAgencyId(agency.getId());
+        tour.setViewCount(0L);
+        tour.setRating(0.0);
+        tour.setAvailableSeats(dto.getMaxSeats());
         tourRepository.createOrUpdate(List.of(tour), true);
         return TourMapper.toFullInfo(tour);
     }
 
     @Override
-    public TourFullInfo updateTour(UpdateTourRequestDTO dto, Long ownerId) {
+    public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId) {
         Long agencyId = agencyRepository.getAllAgencies()
                 .stream()
-                .filter(agency -> agency.getOwnerId().equals(ownerId)
-                        && agency.getId().equals(dto.getId()))
+                .filter(agency -> agency.getOwnerId().equals(ownerId))
                 .findFirst()
-                .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!")).getId();
+                .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!"))
+                .getId();
 
         List<TourEntity> allTour = tourRepository.findAll();
         TourEntity tour = allTour.stream()
-                .filter(t -> t.getId().equals(dto.getId()) && t.getAgencyId().equals(agencyId))
+                .filter(t -> t.getId().equals(tourId) && t.getAgencyId().equals(agencyId))
                 .findFirst()
                 .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!"));
 
@@ -71,11 +80,11 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public boolean deleteTour(Long tourId, Long ownerId) {
+    public Boolean deleteTour(Long tourId, Long ownerId) {
         Long agencyId = agencyRepository.getAllAgencies()
                 .stream()
-                .findFirst()
                 .filter(agency -> agency.getOwnerId().equals(ownerId))
+                .findFirst()
                 .orElseThrow(() -> new PermissionDeniedException("You don't have access to delete tour!")).getId();
         TourEntity tour = tourRepository.findAll()
                 .stream()
@@ -109,7 +118,7 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public List<TourShortInfo> getAllSavedTour(Long userId, int size, int page) {
+    public List<TourShortInfo> getAllSavedTour(Long userId, int page, int size) {
         List<Long> tourIds = savedTourRepository.findAllByUserId(userId)
                 .stream()
                 .filter(t -> t.getUserId().equals(userId))

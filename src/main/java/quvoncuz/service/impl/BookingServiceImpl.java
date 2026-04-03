@@ -5,7 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.booking.BookingFullInfo;
+import quvoncuz.dto.booking.BookingShortInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
+import quvoncuz.dto.booking.UpdateBookingRequestDTO;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.entities.*;
 import quvoncuz.enums.BookingStatus;
@@ -19,7 +21,7 @@ import quvoncuz.mapper.PaymentMapper;
 import quvoncuz.repository.*;
 import quvoncuz.service.BookingService;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -75,18 +77,16 @@ public class BookingServiceImpl implements BookingService {
         tourRepository.createOrUpdate(allTour, false);
 
         BookingEntity booking = BookingMapper.toEntity(dto, userId);
-        booking.setTotalPrice(tour.getPrice().multiply(BigDecimal.valueOf(dto.getSeatsBooked())));
-
-        PaymentEntity payment = PaymentMapper.toEntity(new PaymentRequestDTO(tour.getId(), booking.getId()), userId);
-        paymentRepository.createOrUpdate(List.of(payment), true);
+        booking.setTotalPrice(tour.getPrice() * dto.getSeatsBooked());
 
         bookingRepository.createOrUpdate(List.of(booking), true);
+        createPayment(booking.getId(), userId);
         logger.info("Booking created successfully for tourId: {} and userId: {}", dto.getTourId(), userId);
         return BookingMapper.toFullInfo(booking);
     }
 
     @Override
-    public List<BookingEntity> findAllByUserId(Long userId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
         ProfileEntity profile = profileRepository.findById(loginId);
         if (profile.getRole() != Role.ADMIN || !loginId.equals(userId)) {
             throw new IllegalArgumentException("Users can only view their own bookings. userId: " + userId + ", loginId: " + loginId);
@@ -95,13 +95,15 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.findAll()
                 .stream()
                 .filter(booking -> booking.getUserId().equals(userId))
+                .sorted((b1, b2) -> b2.getBookedAt().compareTo(b1.getBookedAt()))
                 .skip((long) (page - 1) * size)
                 .limit(size)
+                .map(BookingMapper::toShortInfo)
                 .toList();
     }
 
     @Override
-    public List<BookingEntity> findAllByTourId(Long tourId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
         logger.info("Finding all bookings for tourId: {} with pagination - page: {}, size: {}", tourId, page, size);
         ProfileEntity profile = profileRepository.findById(loginId);
         List<TourEntity> tourByAgencyId = tourRepository.findAll()
@@ -116,14 +118,15 @@ public class BookingServiceImpl implements BookingService {
                         && (profile.getRole() == Role.ADMIN
                         || booking.getUserId().equals(loginId)
                         || tourByAgencyId.stream()
-                                .anyMatch(tour -> tour.getId().equals(booking.getTourId()))))
+                        .anyMatch(tour -> tour.getId().equals(booking.getTourId()))))
                 .skip((long) (page - 1) * size)
                 .limit(size)
+                .map(BookingMapper::toShortInfo)
                 .toList();
     }
 
     @Override
-    public List<BookingEntity> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
         ProfileEntity profile = profileRepository.findById(loginId);
         AgencyEntity agency = agencyRepository.findById(agencyId);
         if (!(agency.getOwnerId().equals(loginId) || profile.getRole().equals(Role.ADMIN))) {
@@ -140,12 +143,12 @@ public class BookingServiceImpl implements BookingService {
                         .anyMatch(tour -> tour.getId().equals(booking.getTourId())))
                 .skip((long) (page - 1) * size)
                 .limit(size)
+                .map(BookingMapper::toShortInfo)
                 .toList();
     }
 
     @Override
     public boolean cancelBooking(Long bookingId, Long userId) {
-
         List<ProfileEntity> allProfile = profileRepository.findAll();
         ProfileEntity profile = allProfile.stream()
                 .filter(p -> p.getId().equals(userId))
@@ -163,8 +166,8 @@ public class BookingServiceImpl implements BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELED);
-        if (booking.getPaidAmount() != null && booking.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
-            profile.setBalance(profile.getBalance().add(booking.getPaidAmount()));
+        if (booking.getPaidAmount() != null && booking.getPaidAmount() > 0) {
+            profile.setBalance(profile.getBalance() + booking.getPaidAmount());
         }
         profileRepository.createOrReplace(allProfile, false);
         bookingRepository.createOrUpdate(allBooking, false);
@@ -174,15 +177,15 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingFullInfo updateBookingSeats(Integer seats, Long user) {
+    public BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto, Long userId) {
         List<BookingEntity> allBooking = bookingRepository.findAll();
         BookingEntity booking = allBooking.stream()
-                .filter(b -> b.getUserId().equals(user))
+                .filter(b -> b.getId().equals(bookingId) && b.getUserId().equals(userId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found for userId: " + user));
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found for userId: " + userId));
 
         if (booking.getStatus() == BookingStatus.CANCELED) {
-            throw new IllegalArgumentException("Cannot update seats for canceled booking for userId: " + user);
+            throw new IllegalArgumentException("Cannot update seats for canceled booking for userId: " + userId);
         }
 
         List<TourEntity> allTour = tourRepository.findAll();
@@ -195,7 +198,7 @@ public class BookingServiceImpl implements BookingService {
         List<PaymentEntity> allPayment = paymentRepository.findAll();
         PaymentEntity payment = allPayment.stream()
                 .filter(p -> p.getBookingId().equals(booking.getId())
-                        && p.getUserId().equals(user))
+                        && p.getUserId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
 
@@ -203,7 +206,7 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException("Tour is not active for tourId: " + tour.getId());
         }
 
-        int seatsDifference = seats - booking.getSeatsBooked();
+        int seatsDifference = dto.getSeats() - booking.getSeatsBooked();
 
         if (tour.getAvailableSeats() < seatsDifference) {
             throw new IllegalArgumentException("Not enough available seats for tourId: " + tour.getId());
@@ -216,27 +219,39 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (payment.getStatus() != PaymentStatus.PAID) {
-            payment.setAmount(tour.getPrice().multiply(BigDecimal.valueOf(seats)));
+            payment.setAmount(tour.getPrice() * dto.getSeats());
             paymentRepository.createOrUpdate(allPayment, false);
         } else {
-            PaymentEntity newPayment = PaymentMapper.toEntity(new PaymentRequestDTO(tour.getId(), booking.getId()), user);
-            newPayment.setAmount(tour.getPrice().multiply(BigDecimal.valueOf(seatsDifference)));
+            if (seatsDifference < 0) {
+                throw new IllegalArgumentException("Cannot reduce the number of seats booked for tourId: " + tour.getId());
+            }
+            PaymentEntity newPayment = PaymentMapper.toEntity(new PaymentRequestDTO(tour.getId(), booking.getId()), userId);
+            newPayment.setAmount(tour.getPrice() * seatsDifference);
             paymentRepository.createOrUpdate(List.of(newPayment), true);
         }
 
 
-        booking.setSeatsBooked(seats);
-        booking.setTotalPrice(tour.getPrice().multiply(BigDecimal.valueOf(seats)));
+        booking.setSeatsBooked(dto.getSeats());
+        booking.setTotalPrice(tour.getPrice() * dto.getSeats());
         bookingRepository.createOrUpdate(allBooking, false);
 
         tourRepository.createOrUpdate(allTour, false);
 
-        logger.info("Booking seats updated successfully for bookingId: {} and userId: {}", booking.getId(), user);
+        logger.info("Booking seats updated successfully for bookingId: {} and userId: {}", booking.getId(), userId);
         return BookingMapper.toFullInfo(booking);
     }
 
-    @Override
-    public void payment(Long bookingId, Long userId) {
-        List<BookingEntity> allBooking = bookingRepository.findAll();
+    private void createPayment(Long bookingId, Long userId) {
+        BookingEntity booking = bookingRepository.findById(bookingId);
+        PaymentEntity payment = PaymentEntity.builder()
+                .id(null)
+                .userId(userId)
+                .tourId(booking.getTourId())
+                .bookingId(bookingId)
+                .amount(booking.getTotalPrice())
+                .status(PaymentStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
+        paymentRepository.createOrUpdate(List.of(payment), true);
     }
 }

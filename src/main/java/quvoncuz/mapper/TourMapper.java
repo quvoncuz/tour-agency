@@ -6,55 +6,64 @@ import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.TourStatus;
 
+import java.time.LocalDateTime;
+
 public class TourMapper {
 
-    public static TourEntity toEntity(CreateTourRequestDTO dto){
-        TourEntity tour = new TourEntity();
-        tour.setTitle(dto.getTitle());
-        tour.setDescription(dto.getDescription());
-        tour.setDestination(dto.getDestination());
-        tour.setPrice(dto.getPrice());
-        tour.setDurationDays(dto.getDurationDays());
-        tour.setMaxSeats(dto.getMaxSeats());
-        tour.setStartDate(dto.getStartDate());
-        tour.setEndDate(dto.getEndDate());
-        tour.setStatus(TourStatus.ACTIVE);
-        return tour;
+    public static TourEntity toEntity(CreateTourRequestDTO dto) {
+        return TourEntity.builder()
+                .id(null)
+                .agencyId(null)
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .destination(dto.getDestination())
+                .price(dto.getPrice())
+                .durationDays(dto.getDurationDays())
+                .maxSeats(dto.getMaxSeats())
+                .availableSeats(dto.getMaxSeats())
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
+                .isActive(true)
+                .viewCount(0L)
+                .rating(0.0)
+                .status(TourStatus.ACTIVE)
+                .createdDate(LocalDateTime.now())
+                .build();
     }
 
-    public static TourShortInfo toShortInfo(TourEntity entity){
-        TourShortInfo shortInfo = new TourShortInfo();
-        shortInfo.setId(entity.getId());
-        shortInfo.setAgencyId(entity.getAgencyId());
-        shortInfo.setTitle(entity.getTitle());
-        shortInfo.setDestination(entity.getDestination());
-        shortInfo.setPrice(entity.getPrice());
-        shortInfo.setDurationDays(entity.getDurationDays());
-        shortInfo.setMaxSeats(entity.getMaxSeats());
-        shortInfo.setStartDate(entity.getStartDate());
-        shortInfo.setViewCount(entity.getViewCount());
-        shortInfo.setRating(entity.getRating());
-        shortInfo.setStatus(entity.getStatus());
-        return shortInfo;
+    public static TourShortInfo toShortInfo(TourEntity entity) {
+        return TourShortInfo.builder()
+                .id(entity.getId())
+                .agencyId(entity.getAgencyId())
+                .title(entity.getTitle())
+                .destination(entity.getDestination())
+                .price(entity.getPrice())
+                .durationDays(entity.getDurationDays())
+                .maxSeats(entity.getMaxSeats())
+                .startDate(entity.getStartDate())
+                .viewCount(entity.getViewCount())
+                .rating(entity.getRating())
+                .status(entity.getStatus())
+                .build();
     }
 
-    public static TourFullInfo toFullInfo(TourEntity entity){
-        TourFullInfo fullInfo = new TourFullInfo();
-        fullInfo.setId(entity.getId());
-        fullInfo.setAgencyId(entity.getAgencyId());
-        fullInfo.setTitle(entity.getTitle());
-        fullInfo.setDescription(entity.getDescription());
-        fullInfo.setDestination(entity.getDestination());
-        fullInfo.setPrice(entity.getPrice());
-        fullInfo.setDurationDays(entity.getDurationDays());
-        fullInfo.setMaxSeats(entity.getMaxSeats());
-        fullInfo.setAvailableSeats(entity.getAvailableSeats());
-        fullInfo.setStartDate(entity.getStartDate());
-        fullInfo.setEndDate(entity.getEndDate());
-        fullInfo.setViewCount(entity.getViewCount());
-        fullInfo.setRating(entity.getRating());
-        fullInfo.setStatus(entity.getStatus());
-        return fullInfo;
+    public static TourFullInfo toFullInfo(TourEntity entity) {
+        return TourFullInfo.builder()
+                .id(entity.getId())
+                .agencyId(entity.getAgencyId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .destination(entity.getDestination())
+                .price(entity.getPrice())
+                .durationDays(entity.getDurationDays())
+                .maxSeats(entity.getMaxSeats())
+                .availableSeats(entity.getAvailableSeats())
+                .startDate(entity.getStartDate())
+                .endDate(entity.getEndDate())
+                .viewCount(entity.getViewCount())
+                .rating(entity.getRating())
+                .status(entity.getStatus())
+                .build();
     }
 
 }

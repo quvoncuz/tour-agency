@@ -16,11 +16,11 @@ public interface ProfileService {
 
     boolean existsByEmail(String email);
 
-    public boolean deleteById(Long id, Long adminId);
+    public Boolean deleteById(Long id, Long adminId);
 
     ProfileDTO getProfileById(Long id, Long adminId);
 
-    List<ProfileDTO> getAllProfiles(Long adminId);
+    List<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
 
     public void updateRole(Role role, long userId);
 }
