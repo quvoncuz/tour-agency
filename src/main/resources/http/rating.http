@@ -1,0 +1,32 @@
+### create rating
+POST localhost:8080/rating/create
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "sourceId": 1,
+  "comment": "good",
+  "stars": 4,
+  "type": "TOUR"
+}
+
+### update rating
+PUT localhost:8080/rating/1
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "stars": 5,
+  "comment": "perfect"
+}
+
+### delete rating
+DELETE localhost:8080/rating/1
+X-User-Id: {{userId}}
+
+### find by sourceId and type
+GET localhost:8080/rating/1?type=TOUR
+X-User-Id: {{userId}}
+
+### find by user id
+GET localhost:8080/rating/?userId=1

@@ -1,0 +1,11 @@
+### delete by id
+DELETE localhost:8080/profile/2
+X-User-Id: {{userId}}
+
+### get profile by id
+GET localhost:8080/profile/2
+X-User-Id: {{userId}}
+
+### get all profiles
+GET localhost:8080/profile/all
+X-User-Id: {{userId}}

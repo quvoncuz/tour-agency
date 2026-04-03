@@ -8,41 +8,41 @@ import quvoncuz.entities.AgencyEntity;
 public class AgencyMapper {
 
     public static AgencyShortInfo toShortInfo(AgencyEntity entity) {
-        return new AgencyShortInfo(
-                entity.getId(),
-                entity.getName(),
-                entity.getPhone(),
-                entity.getCity(),
-                entity.getRating()
-        );
+        return AgencyShortInfo.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .phone(entity.getPhone())
+                .city(entity.getCity())
+                .rating(entity.getRating())
+                .build();
     }
 
     public static AgencyFullInfo toFullInfo(AgencyEntity entity) {
-        return new AgencyFullInfo(
-                entity.getId(),
-                entity.getOwnerId(),
-                entity.getName(),
-                entity.getPhone(),
-                entity.getEmail(),
-                entity.getDescription(),
-                entity.getCity(),
-                entity.getAddress(),
-                entity.getRating()
-        );
+        return AgencyFullInfo.builder()
+                .id(entity.getId())
+                .ownerId(entity.getOwnerId())
+                .name(entity.getName())
+                .phone(entity.getPhone())
+                .email(entity.getEmail())
+                .description(entity.getDescription())
+                .city(entity.getCity())
+                .address(entity.getAddress())
+                .rating(entity.getRating())
+                .build();
     }
 
     public static AgencyDTO toDTO(AgencyEntity agency) {
-        return new AgencyDTO(
-                agency.getId(),
-                agency.getOwnerId(),
-                agency.getName(),
-                agency.getPhone(),
-                agency.getEmail(),
-                agency.getDescription(),
-                agency.getCity(),
-                agency.getAddress(),
-                agency.getApproved(),
-                agency.getRating()
-        );
+        return AgencyDTO.builder()
+                .id(agency.getId())
+                .ownerId(agency.getOwnerId())
+                .name(agency.getName())
+                .phone(agency.getPhone())
+                .email(agency.getEmail())
+                .description(agency.getDescription())
+                .city(agency.getCity())
+                .address(agency.getAddress())
+                .approved(agency.getApproved())
+                .rating(agency.getRating())
+                .build();
     }
 }

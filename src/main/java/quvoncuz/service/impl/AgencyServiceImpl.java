@@ -34,15 +34,19 @@ public class AgencyServiceImpl implements AgencyService {
         if (!profile.getRole().equals(Role.USER)) {
             throw new PermissionDeniedException("You have a agency already");
         }
-        AgencyEntity agency = new AgencyEntity();
-        agency.setId(profile.getId()); // agency id and owner id the same
-        agency.setName(dto.getName());
-        agency.setPhone(dto.getPhone());
-        agency.setEmail(dto.getEmail());
-        agency.setDescription(dto.getDescription());
-        agency.setCity(dto.getCity());
-        agency.setAddress(dto.getAddress());
-        agency.setStatus(AgencyStatus.PENDING);
+        AgencyEntity agency = AgencyEntity.builder()
+                        .id(profile.getId())
+                .ownerId(profile.getId())
+                .name(dto.getName())
+                .phone(dto.getPhone())
+                .email(dto.getEmail())
+                .description(dto.getDescription())
+                .city(dto.getCity())
+                .address(dto.getAddress())
+                .approved(false)
+                .rating(0.0)
+                .status(AgencyStatus.PENDING)
+                .build();
         agencyRepository.createOrUpdate(List.of(agency), true);
         logger.info("User with id {} applied for agency with id {}", userId, agency.getId());
         return AgencyMapper.toDTO(agency);
@@ -57,6 +61,7 @@ public class AgencyServiceImpl implements AgencyService {
         List<AgencyEntity> allAgencies = agencyRepository.getAllAgencies();
         AgencyEntity agency = allAgencies
                 .stream()
+                .peek(a -> System.out.println(a.getId() + " " + dto.getAgencyId()))
                 .filter(a -> a.getId().equals(dto.getAgencyId()))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Agency not found"));

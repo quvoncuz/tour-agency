@@ -1,0 +1,50 @@
+### create tour
+POST localhost:8080/tour/create
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "title": "Tour to Italy",
+  "description": "EURO",
+  "destination": "Italy",
+  "durationDays": 7,
+  "startDate": "2026-05-24",
+  "endDate": "2026-05-31",
+  "maxSeats": 100,
+  "price": 299
+}
+
+### update tour
+PUT localhost:8080/tour/1
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "title": "Tour to Italy",
+  "description": "EURO",
+  "destination": "Italy",
+  "durationDays": 7,
+  "startDate": "2026-05-24",
+  "endDate": "2026-05-31",
+  "maxSeats": 100,
+  "price": 299
+}
+
+### delete tour
+DELETE localhost:8080/tour/1
+X-User-Id: {{userId}}
+
+### get all tour
+GET localhost:8080/tour/all
+
+### get all actice tour
+GET localhost:8080/tour/all-active
+
+### get by id
+GET localhost:8080/tour/1
+
+### get saved tour
+GET localhost:8080/tour/saved
+
+### search
+GET localhost:8080/tour/search?query=Italy

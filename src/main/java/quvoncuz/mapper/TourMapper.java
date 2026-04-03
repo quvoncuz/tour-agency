@@ -65,5 +65,4 @@ public class TourMapper {
                 .status(entity.getStatus())
                 .build();
     }
-
 }

@@ -27,7 +27,7 @@ public class PaymentRepository {
     private final AtomicLong idGenerator = new AtomicLong(1);
 
     public PaymentRepository(@Value("${file.folder}") String FILE_FOLDER) {
-        this.FILE_NAME = FILE_FOLDER + "booking.csv";
+        this.FILE_NAME = FILE_FOLDER + "payment.csv";
     }
 
     @PostConstruct
@@ -146,7 +146,7 @@ public class PaymentRepository {
 
     private PaymentEntity fromCsvLine(String line) {
         String[] s = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-        if (s.length != 8) {
+        if (s.length != 7) {
             return null;
         }
         try {
@@ -157,7 +157,7 @@ public class PaymentRepository {
                     Long.parseLong(s[2].trim()),
                     Long.parseLong(s[3].trim()),
                     PaymentStatus.valueOf(s[5].trim()),
-                    LocalDateTime.parse(s[7].trim())
+                    LocalDateTime.parse(s[6].trim())
             );
         } catch (Exception e) {
             return null;

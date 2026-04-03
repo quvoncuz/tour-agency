@@ -8,7 +8,7 @@ public class RatingMapper {
 
     public static RatingFullInfo toFullInfo(RatingEntity entity) {
         return RatingFullInfo.builder()
-                .userId(entity.getId())
+                .userId(entity.getUserId())
                 .sourceId(entity.getSourceId())
                 .stars(entity.getStars())
                 .comment(entity.getComment())
@@ -24,5 +24,4 @@ public class RatingMapper {
                 .stars(entity.getStars())
                 .build();
     }
-
 }

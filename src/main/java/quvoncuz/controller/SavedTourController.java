@@ -17,14 +17,14 @@ public class SavedTourController {
 
     private final SavedTourService savedTourService;
 
-    @PostMapping
+    @PostMapping("")
     public ResponseEntity<Boolean> saveTour(
             @RequestBody SaveTourRequestDTO dto,
             @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(savedTourService.saveTour(dto, userId));
     }
 
-    @GetMapping
+    @GetMapping("")
     public ResponseEntity<List<TourShortInfo>> getAllSavedTours(
             @RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(savedTourService.getAllSavedTours(userId));

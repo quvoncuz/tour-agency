@@ -7,7 +7,6 @@ import quvoncuz.dto.payment.PaymentShortInfo;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.PaymentStatus;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class PaymentMapper {
@@ -29,7 +28,7 @@ public class PaymentMapper {
                 .bookingId(entity.getBookingId())
                 .amount(entity.getAmount())
                 .status(entity.getStatus())
-                .createdDate(LocalDate.from(entity.getCreatedAt()))
+                .createdDate(entity.getCreatedAt().toLocalDate())
                 .build();
     }
 
@@ -40,8 +39,6 @@ public class PaymentMapper {
                 .bookingId(entity.getBookingId())
                 .status(entity.getStatus())
                 .build();
-
-
     }
 
     public static PaymentEntity toEntity(PaymentRequestDTO dto, Long userId) {
@@ -55,5 +52,4 @@ public class PaymentMapper {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
-
 }

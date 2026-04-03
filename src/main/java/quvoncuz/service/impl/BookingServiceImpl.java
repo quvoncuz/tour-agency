@@ -88,8 +88,8 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
         ProfileEntity profile = profileRepository.findById(loginId);
-        if (profile.getRole() != Role.ADMIN || !loginId.equals(userId)) {
-            throw new IllegalArgumentException("Users can only view their own bookings. userId: " + userId + ", loginId: " + loginId);
+        if (profile.getRole() != Role.ADMIN && !loginId.equals(userId)) {
+            throw new IllegalArgumentException("You don't have permission to view bookings for this user. userId: " + userId + ", loginId: " + loginId);
         }
         logger.info("Finding all bookings for userId: {} with pagination - page: {}, size: {}", userId, page, size);
         return bookingRepository.findAll()
@@ -197,7 +197,8 @@ public class BookingServiceImpl implements BookingService {
 
         List<PaymentEntity> allPayment = paymentRepository.findAll();
         PaymentEntity payment = allPayment.stream()
-                .filter(p -> p.getBookingId().equals(booking.getId())
+                .peek(p -> System.out.println("Payment found: " + p.getId() + ", bookingId: " + p.getBookingId() + ", userId: " + p.getUserId()))
+                .filter(p -> p.getBookingId().equals(bookingId)
                         && p.getUserId().equals(userId))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Payment not found"));

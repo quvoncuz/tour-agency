@@ -1,0 +1,12 @@
+### save tour
+POST localhost:8080/saved-tour
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "tourId": 1
+}
+
+### get saved tour by user
+GET localhost:8080/saved-tour
+X-User-Id: {{userId}}

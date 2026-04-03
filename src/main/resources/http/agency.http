@@ -1,0 +1,52 @@
+### apply agency
+POST localhost:8080/agency/apply
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "name": "TOUR.U",
+  "phone": "998999999999",
+  "city": "Tashkent",
+  "address": "Yunusobod",
+  "email": "eurotouruz@eurotour.uz",
+  "description": "tour to europe"
+}
+
+### approve agency
+POST localhost:8080/agency/approve
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "agencyId": 2,
+  "approve": true
+}
+
+### pending agencies
+GET localhost:8080/agency/admin/pending-agencies
+X-User-Id: {{userId}}
+
+### all agencies
+GET localhost:8080/agency/all
+
+### update agency
+PUT localhost:8080/agency/update/1
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "name": "EURO PASS",
+  "email": "europass@gmail.com",
+  "phone": "998909009090",
+  "address": "Chilonzor",
+  "description": "tour to Paris",
+  "city": "Tashkent"
+}
+
+### get by id
+GET localhost:8080/agency/1
+
+### delete by id
+DELETE localhost:8080/agency/1
+X-User-Id: {{userId}}
+

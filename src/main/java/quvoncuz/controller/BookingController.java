@@ -20,31 +20,32 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping("/create")
-    public ResponseEntity<BookingFullInfo> createBooking(@RequestBody CreateBookingRequestDTO dto, Long userId) {
+    public ResponseEntity<BookingFullInfo> createBooking(@RequestBody CreateBookingRequestDTO dto,
+                                                         @RequestHeader(value = "X-User-Id") Long userId) {
         return ResponseEntity.ok(bookingService.createBooking(dto, userId));
     }
 
     @GetMapping({"/by-user", "/by-user/{userId}"})
     public ResponseEntity<List<BookingShortInfo>> findAllByUserId(@PathVariable(required = false) Long userId,
-                                                                  @RequestHeader(value = "X-User-Id") Long headerUserId,
-                                                                  @RequestParam(defaultValue = "0") int page,
+                                                                  @RequestHeader(value = "X-User-Id") Long loginId,
+                                                                  @RequestParam(defaultValue = "1") int page,
                                                                   @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(bookingService.findAllByUserId(userId, headerUserId, page, size));
+        return ResponseEntity.ok(bookingService.findAllByUserId(userId, loginId, page, size));
     }
 
     @GetMapping("/by-tour/{tourId}")
     public ResponseEntity<List<BookingShortInfo>> findAllByTourId(@PathVariable Long tourId,
                                                                   @RequestHeader(value = "X-User-Id") Long userId,
-                                                                  @RequestParam int page,
-                                                                  @RequestParam int size) {
+                                                                  @RequestParam(defaultValue = "1") int page,
+                                                                  @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(bookingService.findAllByTourId(tourId, userId, page, size));
     }
 
     @GetMapping("/by-agency/{agencyId}")
     public ResponseEntity<List<BookingShortInfo>> findAllByAgencyId(@PathVariable Long agencyId,
                                                                     @RequestHeader(value = "X-User-Id") Long userId,
-                                                                    @RequestParam int page,
-                                                                    @RequestParam int size) {
+                                                                    @RequestParam(defaultValue = "1") int page,
+                                                                    @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(bookingService.findAllByAgencyId(agencyId, userId, page, size));
     }
 
