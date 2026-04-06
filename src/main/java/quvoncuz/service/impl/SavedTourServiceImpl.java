@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.tour.SaveTourRequestDTO;
 import quvoncuz.dto.tour.TourShortInfo;
@@ -27,21 +29,19 @@ public class SavedTourServiceImpl implements SavedTourService {
         SavedTourEntity savedTour = new SavedTourEntity();
         savedTour.setUserId(userId);
         savedTour.setTourId(dto.getTourId());
-        savedTourRepository.createOrUpdate(List.of(savedTour), true);
+        savedTourRepository.save(savedTour);
         return true;
     }
 
     @Override
-    public List<TourShortInfo> getAllSavedTours(Long userId) {
+    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
         List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserId(userId)
                 .stream()
                 .map(SavedTourEntity::getTourId)
                 .toList();
-        return tourRepository.findAll()
-                .stream()
-                .filter(tour -> allSavedTourIdByUserId.contains(tour.getId()))
-                .map(TourMapper::toShortInfo)
-                .toList();
+        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
 }
