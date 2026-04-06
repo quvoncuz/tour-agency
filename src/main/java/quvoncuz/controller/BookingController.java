@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -9,8 +10,6 @@ import quvoncuz.dto.booking.BookingShortInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.dto.booking.UpdateBookingRequestDTO;
 import quvoncuz.service.BookingService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("booking")
@@ -26,7 +25,7 @@ public class BookingController {
     }
 
     @GetMapping({"/by-user", "/by-user/{userId}"})
-    public ResponseEntity<List<BookingShortInfo>> findAllByUserId(@PathVariable(required = false) Long userId,
+    public ResponseEntity<Page<BookingShortInfo>> findAllByUserId(@PathVariable(required = false) Long userId,
                                                                   @RequestHeader(value = "X-User-Id") Long loginId,
                                                                   @RequestParam(defaultValue = "1") int page,
                                                                   @RequestParam(defaultValue = "10") int size) {
@@ -34,7 +33,7 @@ public class BookingController {
     }
 
     @GetMapping("/by-tour/{tourId}")
-    public ResponseEntity<List<BookingShortInfo>> findAllByTourId(@PathVariable Long tourId,
+    public ResponseEntity<Page<BookingShortInfo>> findAllByTourId(@PathVariable Long tourId,
                                                                   @RequestHeader(value = "X-User-Id") Long userId,
                                                                   @RequestParam(defaultValue = "1") int page,
                                                                   @RequestParam(defaultValue = "10") int size) {
@@ -42,7 +41,7 @@ public class BookingController {
     }
 
     @GetMapping("/by-agency/{agencyId}")
-    public ResponseEntity<List<BookingShortInfo>> findAllByAgencyId(@PathVariable Long agencyId,
+    public ResponseEntity<Page<BookingShortInfo>> findAllByAgencyId(@PathVariable Long agencyId,
                                                                     @RequestHeader(value = "X-User-Id") Long userId,
                                                                     @RequestParam(defaultValue = "1") int page,
                                                                     @RequestParam(defaultValue = "10") int size) {
