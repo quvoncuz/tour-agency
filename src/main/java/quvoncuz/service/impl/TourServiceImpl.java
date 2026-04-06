@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
@@ -10,6 +12,7 @@ import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.SavedTourEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.AgencyStatus;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.TourMapper;
@@ -26,45 +29,32 @@ import java.util.List;
 public class TourServiceImpl implements TourService {
 
     private final AgencyRepository agencyRepository;
-    private final ProfileRepository profileRepository;
     private final TourRepository tourRepository;
     private final SavedTourRepository savedTourRepository;
 
     @Override
     public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
-        AgencyEntity agency = agencyRepository.getAllAgencies()
-                .stream()
-                .peek(a -> System.out.println("Checking agency: " + a.getId() + " with ownerId: " + a.getOwnerId()))
-                .filter(a -> a.getId().equals(ownerId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Agency not found with id" + ownerId));
+        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
+
         if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)) {
             throw new PermissionDeniedException("You don't have access to create tour!");
         }
 
         TourEntity tour = TourMapper.toEntity(dto);
         tour.setAgencyId(agency.getId());
-        tour.setViewCount(0L);
-        tour.setRating(0.0);
-        tour.setAvailableSeats(dto.getMaxSeats());
-        tourRepository.createOrUpdate(List.of(tour), true);
+
+        tourRepository.save(tour);
         return TourMapper.toFullInfo(tour);
     }
 
     @Override
     public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId) {
-        Long agencyId = agencyRepository.getAllAgencies()
-                .stream()
-                .filter(agency -> agency.getOwnerId().equals(ownerId))
-                .findFirst()
-                .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!"))
-                .getId();
+        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
+        TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
 
-        List<TourEntity> allTour = tourRepository.findAll();
-        TourEntity tour = allTour.stream()
-                .filter(t -> t.getId().equals(tourId) && t.getAgencyId().equals(agencyId))
-                .findFirst()
-                .orElseThrow(() -> new PermissionDeniedException("You don't have access to update tour!"));
+        if (!tour.getAgencyId().equals(agency.getId())) {
+            throw new DoNotMatchException("You don't have permission");
+        }
 
         tour.setTitle(dto.getTitle());
         tour.setDescription(dto.getDescription());
@@ -75,71 +65,50 @@ public class TourServiceImpl implements TourService {
         tour.setStartDate(dto.getStartDate());
         tour.setEndDate(dto.getEndDate());
 
-        tourRepository.createOrUpdate(allTour, false);
+        tourRepository.save(tour);
         return TourMapper.toFullInfo(tour);
     }
 
     @Override
     public Boolean deleteTour(Long tourId, Long ownerId) {
-        Long agencyId = agencyRepository.getAllAgencies()
-                .stream()
-                .filter(agency -> agency.getOwnerId().equals(ownerId))
-                .findFirst()
-                .orElseThrow(() -> new PermissionDeniedException("You don't have access to delete tour!")).getId();
-        TourEntity tour = tourRepository.findAll()
-                .stream()
-                .filter(t -> t.getId().equals(tourId) && t.getAgencyId().equals(agencyId))
-                .findFirst()
-                .orElseThrow(() -> new PermissionDeniedException("You don't have access to delete tour!"));
-        return tourRepository.deleteById(tour.getId());
+        Long agencyId = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found")).getId();
+        return tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
     }
 
     @Override
-    public List<TourShortInfo> getAllTour() {
-        return tourRepository.findAll()
-                .stream()
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> getAllTour(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        return tourRepository.findAll(pageRequest).map(TourMapper::toShortInfo);
     }
 
     @Override
-    public List<TourShortInfo> getAllActiveTour() {
-        return tourRepository.findAll()
-                .stream()
-                .filter(tour -> tour.getIsActive() && tour.getStartDate().isAfter(java.time.LocalDate.now()))
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> getAllActiveTour(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        return tourRepository.findAll(pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Override
     public TourFullInfo getById(Long id) {
-        TourEntity tourById = tourRepository.findById(id);
+        TourEntity tourById = tourRepository.findById(id).orElseThrow(() -> new NotFoundException("Tour not found"));
         return TourMapper.toFullInfo(tourById);
     }
 
     @Override
-    public List<TourShortInfo> getAllSavedTour(Long userId, int page, int size) {
-        List<Long> tourIds = savedTourRepository.findAllByUserId(userId)
+    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserId(userId)
                 .stream()
-                .filter(t -> t.getUserId().equals(userId))
-                .mapToLong(SavedTourEntity::getTourId)
-                .boxed()
+                .map(SavedTourEntity::getTourId)
                 .toList();
-
-        return getAllTour()
-                .stream()
-                .filter(t -> tourIds.contains(t.getId()))
-                .skip((long) size * (page - 1))
-                .limit(size)
-                .toList();
+        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Override
-    public List<TourShortInfo> search(String query) {
-        return tourRepository.findAll()
-                .stream()
-                .filter(tour -> tour.getDestination().contains(query) || tour.getTitle().contains(query))
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> search(String query, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        return tourRepository.findAllByQuery("%" + query + "%", pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 }

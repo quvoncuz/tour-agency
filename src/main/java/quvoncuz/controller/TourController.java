@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -9,8 +10,6 @@ import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
 import quvoncuz.service.TourService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/tour")
@@ -39,14 +38,16 @@ public class TourController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<TourShortInfo>> getAllTour() {
-        return ResponseEntity.ok(tourService.getAllTour());
+    public ResponseEntity<Page<TourShortInfo>> getAllTour(@RequestParam(defaultValue = "1") int page,
+                                                          @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(tourService.getAllTour(page, size));
     }
 
 
     @GetMapping("/all-active")
-    public ResponseEntity<List<TourShortInfo>> getAllActiveTour() {
-        return ResponseEntity.ok(tourService.getAllActiveTour());
+    public ResponseEntity<Page<TourShortInfo>> getAllActiveTour(@RequestParam(defaultValue = "1") int page,
+                                                                @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(tourService.getAllActiveTour(page, size));
     }
 
     @GetMapping("/{tourId}")
@@ -55,14 +56,16 @@ public class TourController {
     }
 
     @GetMapping("/saved")
-    public ResponseEntity<List<TourShortInfo>> getSavedTourId(@RequestHeader(value = "X-User-Id") Long userId,
+    public ResponseEntity<Page<TourShortInfo>> getSavedTourId(@RequestHeader(value = "X-User-Id") Long userId,
                                                               @RequestParam(defaultValue = "1") int page,
                                                               @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(tourService.getAllSavedTour(userId, page, size));
+        return ResponseEntity.ok(tourService.getAllSavedTours(userId, page, size));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TourShortInfo>> search(@RequestParam String query) {
-        return ResponseEntity.ok(tourService.search(query));
+    public ResponseEntity<Page<TourShortInfo>> search(@RequestParam String query,
+                                                      @RequestParam(defaultValue = "1") int page,
+                                                      @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(tourService.search(query, page, size));
     }
 }

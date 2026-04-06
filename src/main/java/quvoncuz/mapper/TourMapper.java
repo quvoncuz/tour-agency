@@ -27,7 +27,7 @@ public class TourMapper {
                 .viewCount(0L)
                 .rating(0.0)
                 .status(TourStatus.ACTIVE)
-                .createdDate(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 
