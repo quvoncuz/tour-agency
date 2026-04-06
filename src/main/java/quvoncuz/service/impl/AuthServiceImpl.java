@@ -11,6 +11,7 @@ import quvoncuz.entities.ProfileEntity;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.InvalidException;
+import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.service.AuthService;
 import quvoncuz.service.ProfileService;
 
@@ -52,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequestDTO dto) {
-        ProfileEntity profile = profileService.findByUsername(dto.getUsername());
+        ProfileEntity profile = profileService.findByUsername(dto.getUsername()).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getPassword().equals(dto.getPassword())){
             throw new DoNotMatchException("Username or password incorrect");
         }

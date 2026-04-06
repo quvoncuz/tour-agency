@@ -4,9 +4,9 @@ Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "title": "Tour to Italy",
+  "title": "Tour to Paris",
   "description": "EURO",
-  "destination": "Italy",
+  "destination": "Paris",
   "durationDays": 7,
   "startDate": "2026-05-24",
   "endDate": "2026-05-31",
@@ -15,12 +15,12 @@ X-User-Id: {{userId}}
 }
 
 ### update tour
-PUT localhost:8080/tour/1
+PUT localhost:8080/tour/2
 Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "title": "Tour to Italy",
+  "title": "Tour to Paris and Italy",
   "description": "EURO",
   "destination": "Italy",
   "durationDays": 7,

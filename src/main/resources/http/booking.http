@@ -4,8 +4,8 @@ Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "tourId": 1,
-  "seatsBooked": 2,
+  "tourId": 2,
+  "seatsBooked": 3,
   "note": "To Paris"
 }
 

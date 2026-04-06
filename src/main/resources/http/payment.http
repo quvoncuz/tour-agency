@@ -4,8 +4,8 @@ Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "bookingId": 1,
-  "tourId": 1
+  "bookingId": 2,
+  "tourId": 2
 }
 
 ### find all ADMIN
@@ -17,5 +17,5 @@ GET localhost:8080/payment/by-user
 X-User-Id: {{userId}}
 
 ### find all by tour id
-GET localhost:8080/payment/by-tour?tourId=1
+GET localhost:8080/payment/by-tour?tourId=2
 X-User-Id: {{userId}}
