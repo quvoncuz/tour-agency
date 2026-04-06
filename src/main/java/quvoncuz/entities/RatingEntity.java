@@ -1,25 +1,43 @@
 package quvoncuz.entities;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import quvoncuz.enums.RatingType;
 
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "rating")
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class RatingEntity {
+    @Id
     private Long id;
-    private Long userId;
-    private Long sourceId;
-    private RatingType type;
-    private Integer stars;
-    private String comment;
-    private LocalDateTime createdAt;
 
-    public RatingEntity() {
-        this.createdAt = LocalDateTime.now();
-    }
+    @Column(name = "user_id")
+    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private ProfileEntity user;
+
+    @Column(name = "source_id")
+    private Long sourceId;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private RatingType type;
+
+    @Column
+    private Integer stars;
+
+    @Column
+    private String comment;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }
