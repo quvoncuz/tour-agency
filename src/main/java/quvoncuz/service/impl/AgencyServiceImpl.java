@@ -3,19 +3,22 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.Role;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.AgencyMapper;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.AgencyService;
-import quvoncuz.service.ProfileService;
 
 import java.util.List;
 
@@ -24,18 +27,20 @@ import java.util.List;
 public class AgencyServiceImpl implements AgencyService {
 
     private final Logger logger = LoggerFactory.getLogger(AgencyServiceImpl.class);
-    private final ProfileService profileService;
-    private final AgencyRepository agencyRepository;
     private final ProfileRepository profileRepository;
+    private final AgencyRepository agencyRepository;
 
     @Override
     public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId) {
-        ProfileEntity profile = profileRepository.findById(userId);
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.USER)) {
             throw new PermissionDeniedException("You have a agency already");
         }
+        if (profile.getIsCreateAgency()) {
+            throw new IllegalArgumentException("You already created agency!");
+        }
         AgencyEntity agency = AgencyEntity.builder()
-                        .id(profile.getId())
+                .id(profile.getId())
                 .ownerId(profile.getId())
                 .name(dto.getName())
                 .phone(dto.getPhone())
@@ -47,70 +52,66 @@ public class AgencyServiceImpl implements AgencyService {
                 .rating(0.0)
                 .status(AgencyStatus.PENDING)
                 .build();
-        agencyRepository.createOrUpdate(List.of(agency), true);
+        agencyRepository.save(agency);
         logger.info("User with id {} applied for agency with id {}", userId, agency.getId());
         return AgencyMapper.toDTO(agency);
     }
 
     @Override
     public Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId) {
-        ProfileEntity profile = profileRepository.findById(userId);
-        if (!profile.getRole().equals(Role.ADMIN)) {
+        ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        if (!admin.getRole().equals(Role.ADMIN)) {
             throw new PermissionDeniedException("You don't have permission to approve or reject this agency");
         }
-        List<AgencyEntity> allAgencies = agencyRepository.getAllAgencies();
-        AgencyEntity agency = allAgencies
-                .stream()
-                .peek(a -> System.out.println(a.getId() + " " + dto.getAgencyId()))
-                .filter(a -> a.getId().equals(dto.getAgencyId()))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Agency not found"));
+
+        AgencyEntity agency = findById(dto.getAgencyId());
 
         if (dto.getApprove()) {
-            profileService.updateRole(Role.AGENCY, profileRepository.findById(agency.getOwnerId()).getId());
+            ProfileEntity profile = profileRepository.findById(agency.getOwnerId()).orElseThrow(() -> new NotFoundException("User not found"));
+            profile.setRole(Role.AGENCY);
+            profile.setIsCreateAgency(true);
             agency.setStatus(AgencyStatus.ACCEPTED);
             agency.setApproved(true);
         } else {
             agency.setStatus(AgencyStatus.REJECTED);
         }
-        agencyRepository.createOrUpdate(allAgencies, false);
+        agencyRepository.save(agency);
         logger.info("User with id {} {} agency with id {}", userId, dto.getApprove() ? "approved" : "rejected", agency.getId());
         return true;
     }
 
     @Override
-    public List<AgencyShortInfo> getPendingAgencies(Long userId) {
-        ProfileEntity profile = profileRepository.findById(userId);
+    public Page<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size) {
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.ADMIN)) {
             throw new PermissionDeniedException("You don't have permission to view pending agencies");
         }
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
         logger.info("Admin with id {} requested pending agencies", userId);
-        return agencyRepository.getAllAgencies()
+        Page<AgencyEntity> pageResult = agencyRepository.findAll(pageRequest);
+        List<AgencyShortInfo> result = pageResult.getContent()
                 .stream()
-                .filter(agency -> agency.getStatus() == AgencyStatus.PENDING)
                 .map(AgencyMapper::toShortInfo)
                 .toList();
+        return new PageImpl<>(result, pageRequest, pageResult.getTotalElements());
     }
 
     @Override
-    public List<AgencyFullInfo> getAllAgencies() {
+    public Page<AgencyFullInfo> getAllAgencies(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
         logger.info("Requested all agencies");
-        return agencyRepository.getAllAgencies()
-                .stream()
-                .map(AgencyMapper::toFullInfo)
-                .toList();
+        Page<AgencyEntity> pageResult = agencyRepository.findAll(pageRequest);
+        return pageResult.map(AgencyMapper::toFullInfo);
     }
 
     @Override
     public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId) {
-        List<AgencyEntity> allAgencies = agencyRepository.getAllAgencies();
-        ProfileEntity profile = profileRepository.findById(userId);
-        AgencyEntity agency = allAgencies
-                .stream()
-                .filter(a -> a.getId().equals(agencyId)
-                        /*update if he is admin*/ && a.getOwnerId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Agency not found"));
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        AgencyEntity agency = findById(agencyId);
+
+        if (!profile.getId().equals(agency.getOwnerId())) {
+            throw new DoNotMatchException("You are not owner");
+        }
 
         agency.setName(dto.getName());
         agency.setPhone(dto.getPhone());
@@ -118,33 +119,31 @@ public class AgencyServiceImpl implements AgencyService {
         agency.setDescription(dto.getDescription());
         agency.setCity(dto.getCity());
         agency.setAddress(dto.getAddress());
-        agencyRepository.createOrUpdate(allAgencies, false);
+
+        agencyRepository.save(agency);
         logger.info("User with id {} updated agency with id {}", userId, agency.getId());
         return AgencyMapper.toFullInfo(agency);
     }
 
     @Override
     public Boolean deleteById(Long agencyId, Long userId) {
-        ProfileEntity admin = profileRepository.findById(userId);
+        ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!admin.getRole().equals(Role.ADMIN)) {
             throw new PermissionDeniedException("You don't have permission to delete this agency");
         }
-        List<AgencyEntity> allAgencies = agencyRepository.getAllAgencies();
-        allAgencies.stream().filter(a -> a.getId().equals(agencyId)).findFirst().orElseThrow(() -> new NotFoundException("Agency not found"));
-        allAgencies.removeIf(a -> a.getId().equals(agencyId));
-        agencyRepository.createOrUpdate(allAgencies, false);
         logger.info("Admin with id {} deleted agency with id {}", userId, agencyId);
+        agencyRepository.deleteById(agencyId);
         return true;
     }
 
     @Override
-    public AgencyDTO findById(Long agencyId) {
+    public AgencyDTO findByAgencyId(Long agencyId) {
         logger.info("Requested agency with id {}", agencyId);
-        return agencyRepository.getAllAgencies()
-                .stream()
-                .filter(a -> a.getId().equals(agencyId))
-                .map(AgencyMapper::toDTO)
-                .findFirst()
+        return AgencyMapper.toDTO(findById(agencyId));
+    }
+
+    private AgencyEntity findById(Long agencyId) {
+        return agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new NotFoundException("Agency not found"));
     }
 }

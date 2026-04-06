@@ -1,15 +1,13 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.agency.*;
 import quvoncuz.service.AgencyService;
 
-import java.util.List;
-
-@Controller
+@RestController
 @RequestMapping("/agency")
 @RequiredArgsConstructor
 public class AgencyController {
@@ -31,14 +29,17 @@ public class AgencyController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<AgencyShortInfo>> getPendingAgencies(
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(agencyService.getPendingAgencies(userId));
+    public ResponseEntity<Page<AgencyShortInfo>> getPendingAgencies(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(agencyService.getPendingAgencies(userId, page, size));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<AgencyFullInfo>> getAllAgencies() {
-        return ResponseEntity.ok(agencyService.getAllAgencies());
+    public ResponseEntity<Page<AgencyFullInfo>> getAllAgencies(@RequestParam(defaultValue = "1") int page,
+                                                               @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(agencyService.getAllAgencies(page, size));
     }
 
     @PutMapping("/{agencyId}")
@@ -59,6 +60,6 @@ public class AgencyController {
     @GetMapping("/{agencyId}")
     public ResponseEntity<AgencyDTO> findById(
             @PathVariable Long agencyId) {
-        return ResponseEntity.ok(agencyService.findById(agencyId));
+        return ResponseEntity.ok(agencyService.findByAgencyId(agencyId));
     }
 }
