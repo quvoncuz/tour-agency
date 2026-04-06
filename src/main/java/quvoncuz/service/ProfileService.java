@@ -1,26 +1,29 @@
 package quvoncuz.service;
 
+import org.springframework.data.domain.Page;
 import quvoncuz.dto.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface ProfileService {
-    public ProfileEntity create(RegistrationRequestDTO dto);
+    ProfileEntity create(RegistrationRequestDTO dto);
 
-    public ProfileEntity findByUsername(String username);
+    Optional<ProfileEntity> findByUsername(String username);
 
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
 
-    public Boolean deleteById(Long id, Long adminId);
+    Boolean deleteById(Long id, Long adminId);
 
     ProfileDTO getProfileById(Long id, Long adminId);
 
-    List<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
+    Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
 
-    public void updateRole(Role role, long userId);
+    void updateRole(Role role, long userId);
+
+    ProfileEntity findById(Long profileId);
 }

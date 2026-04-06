@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import quvoncuz.dto.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
@@ -16,7 +18,7 @@ import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -38,20 +40,20 @@ public class ProfileServiceImpl implements ProfileService {
     @PostConstruct
     public void initDefaultAdmin() {
         if (!existsByUsername(adminUsername)) {
-            ProfileEntity admin = new ProfileEntity(
-                    1L,
-                    "admin",
-                    adminUsername,
-                    adminEmail,
-                    adminPassword,
-                    0L,
-                    Role.ADMIN,
-                    Gender.MALE,
-                    false,
-                    true
-            );
+            ProfileEntity admin = ProfileEntity.builder()
+                    .fullName("admin")
+                    .username(adminUsername)
+                    .email(adminEmail)
+                    .password(adminPassword)
+                    .balance(0L)
+                    .role(Role.ADMIN)
+                    .gender(Gender.MALE)
+                    .isCreateAgency(false)
+                    .isActive(true)
+                    .createdAt(LocalDateTime.now())
+                    .build();
             logger.info("Creating default admin with username: {}", adminUsername);
-            profileRepository.createOrReplace(List.of(admin), true);
+            profileRepository.save(admin);
         } else {
             logger.info("Default admin already exists with username: {}", adminUsername);
         }
@@ -60,111 +62,69 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileEntity create(RegistrationRequestDTO dto) {
 
-        ProfileEntity profile = new ProfileEntity(
-                null,
-                dto.getFullName(),
-                dto.getUsername(),
-                dto.getEmail(),
-                dto.getPassword(),
-                0L,
-                Role.USER,
-                dto.getGender(),
-                false,
-                true
-        );
+        ProfileEntity profile = ProfileMapper.toEntity(dto);
 
-        profileRepository.createOrReplace(List.of(profile), true);
+        profileRepository.save(profile);
 
         logger.info("Created new profile with username: {}", profile.getUsername());
         return profile;
     }
 
     @Override
-    public ProfileEntity findByUsername(String username) {
-        return profileRepository.findAll().stream().filter(profile -> profile.getUsername().equals(username))
-                .findFirst().orElseThrow(() -> new NotFoundException("Username not found"));
+    public Optional<ProfileEntity> findByUsername(String username) {
+        return profileRepository.findByUsername(username);
     }
 
     @Override
     public boolean existsByUsername(String username) {
-        Optional<ProfileEntity> profileByUsername = profileRepository.findAll()
-                .stream()
-                .filter(profile -> profile.getUsername().equals(username))
-                .findFirst();
-
-        return profileByUsername.isPresent();
+        return profileRepository.existsByUsername(username);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        Optional<ProfileEntity> profileByEmail = profileRepository.findAll()
-                .stream()
-                .filter(profile -> profile.getEmail().equals(email))
-                .findFirst();
-
-        return profileByEmail.isPresent();
+        return profileRepository.existsByEmail(email);
     }
 
     @Override
     public Boolean deleteById(Long id, Long adminId) {
-        List<ProfileEntity> allProfile = profileRepository.findAll();
-        ProfileEntity admin = allProfile.stream().filter(p -> p.getId().equals(adminId)).findFirst()
-                .orElseThrow(() -> new NotFoundException("Admin with id " + adminId + " not found"));
+        ProfileEntity admin = findById(adminId);
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
-        ProfileEntity profile = allProfile.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Profile with id " + id + " not found"));
-        allProfile.remove(profile);
-        logger.info("Deleted profile with id: {}", id);
-        profileRepository.createOrReplace(allProfile, false);
+        profileRepository.deleteById(id);
         return true;
     }
 
     @Override
     public ProfileDTO getProfileById(Long id, Long adminId) {
-        List<ProfileEntity> allProfile = profileRepository.findAll();
-        ProfileEntity admin = allProfile.stream().filter(p -> p.getId().equals(adminId)).findFirst()
-                .orElseThrow(() -> new NotFoundException("Admin with id " + adminId + " not found"));
+        ProfileEntity admin = findById(adminId);
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
         logger.info("Retrieved profile with id: {} for admin with id: {}", id, adminId);
-        return allProfile
-                .stream()
-                .filter(profile -> profile.getId().equals(id))
-                .map(ProfileMapper::toDTO)
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Profile with id " + id + " not found"));
+        return ProfileMapper.toDTO(findById(id));
     }
 
     @Override
-    public List<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
-        List<ProfileEntity> allProfile = profileRepository.findAll();
-        ProfileEntity admin = allProfile.stream().filter(p -> p.getId().equals(adminId)).findFirst()
-                .orElseThrow(() -> new NotFoundException("Admin with id " + adminId + " not found"));
+    public Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
+        ProfileEntity admin = findById(adminId);
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        Page<ProfileEntity> allProfile = profileRepository.findAll(pageRequest);
         logger.info("Retrieved all profiles for admin with id: {}", adminId);
-        return allProfile
-                .stream()
-                .skip((long) (page - 1) * size)
-                .limit(size)
-                .map(ProfileMapper::toDTO)
-                .toList();
+        return allProfile.map(ProfileMapper::toDTO);
     }
 
     @Override
     public void updateRole(Role role, long userId) {
-        List<ProfileEntity> all = profileRepository.findAll();
-        all.stream()
-                .filter(p -> p.getId().equals(userId)).findFirst()
-                .orElseThrow(() -> new NotFoundException("Profile with id " + userId + " not found"))
-                .setRole(role);
-        logger.info("Updated role to {} for profile with id: {}", role, userId);
-        profileRepository.createOrReplace(all, false);
+        profileRepository.updateProfileRole(role, userId);
+    }
+
+    @Override
+    public ProfileEntity findById(Long profileId) {
+        return profileRepository.findById(profileId).orElseThrow(() -> new NotFoundException("User not found with id: " + profileId));
     }
 }
