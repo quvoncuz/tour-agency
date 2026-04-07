@@ -23,7 +23,7 @@ public interface TourRepository extends JpaRepository<TourEntity, Long> {
 
     Page<TourEntity> findAllByIdIn(List<Long> ids, Pageable pageable);
 
-    Boolean deleteByIdAndAgencyId(Long id, Long agencyId);
+    void deleteByIdAndAgencyId(Long id, Long agencyId);
 
     @Query("select t from TourEntity as t where lower(t.title) like ?1 or lower(t.description) like ?1 or lower(t.destination) like ?1 order by t.createdAt desc ")
     Page<TourEntity> findAllByQuery(String query, Pageable pageable);

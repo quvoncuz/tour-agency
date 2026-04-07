@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
@@ -70,9 +71,11 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
+    @Transactional
     public Boolean deleteTour(Long tourId, Long ownerId) {
         Long agencyId = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found")).getId();
-        return tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
+        tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
+        return true;
     }
 
     @Override
@@ -91,6 +94,7 @@ public class TourServiceImpl implements TourService {
     @Override
     public TourFullInfo getById(Long id) {
         TourEntity tourById = tourRepository.findById(id).orElseThrow(() -> new NotFoundException("Tour not found"));
+        incrementViewCount(tourById);
         return TourMapper.toFullInfo(tourById);
     }
 
@@ -110,5 +114,10 @@ public class TourServiceImpl implements TourService {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
         return tourRepository.findAllByQuery("%" + query + "%", pageRequest)
                 .map(TourMapper::toShortInfo);
+    }
+
+    private void incrementViewCount(TourEntity tour){
+        tour.setViewCount(tour.getViewCount()+1);
+        tourRepository.save(tour);
     }
 }
