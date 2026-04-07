@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.rating.RatingFullInfo;
 import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.RatingShortInfo;
@@ -38,6 +39,7 @@ public class RatingServiceImpl implements RatingService {
     private final AgencyRepository agencyRepository;
     private final TourRepository tourRepository;
 
+    @Transactional
     @Override
     public RatingFullInfo create(RatingRequestDTO dto, Long userId) {
         if (hasRated(userId, dto.getSourceId(), dto.getType())) {
@@ -45,7 +47,6 @@ public class RatingServiceImpl implements RatingService {
         }
         validateStars(dto.getStars());
         RatingEntity rating = RatingEntity.builder()
-                .id(null)
                 .userId(userId)
                 .sourceId(dto.getSourceId())
                 .type(dto.getType())
@@ -60,6 +61,7 @@ public class RatingServiceImpl implements RatingService {
         return RatingMapper.toFullInfo(rating);
     }
 
+    @Transactional
     @Override
     public RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto, Long userId) {
         RatingEntity rating = ratingRepository.findById(ratingId).orElseThrow(() -> new NotFoundException("Rating not found"));
