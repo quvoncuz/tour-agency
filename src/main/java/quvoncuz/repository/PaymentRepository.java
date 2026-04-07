@@ -7,12 +7,13 @@ import org.springframework.stereotype.Repository;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.PaymentStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
 
-    PaymentEntity findByBookingIdAndUserIdOrderByCreatedAtDesc(Long bookingId, Long userId);
+    List<PaymentEntity> findByBookingIdAndUserIdOrderByCreatedAtDesc(Long bookingId, Long userId);
 
     Optional<PaymentEntity> findByUserIdAndTourIdAndBookingIdAndStatusIs(Long userId, Long tourId, Long bookingId, PaymentStatus paymentStatus);
 

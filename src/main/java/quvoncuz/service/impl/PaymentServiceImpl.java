@@ -6,24 +6,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.payment.PaymentFullInfo;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
-import quvoncuz.entities.AgencyEntity;
-import quvoncuz.entities.PaymentEntity;
-import quvoncuz.entities.ProfileEntity;
-import quvoncuz.entities.TourEntity;
+import quvoncuz.entities.*;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.PaymentStatus;
 import quvoncuz.enums.Role;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.mapper.PaymentMapper;
-import quvoncuz.repository.BookingRepository;
-import quvoncuz.repository.PaymentRepository;
-import quvoncuz.repository.ProfileRepository;
-import quvoncuz.repository.TourRepository;
+import quvoncuz.repository.*;
 import quvoncuz.service.PaymentService;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +31,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingRepository bookingRepository;
     private final ProfileRepository profileRepository;
     private final TourRepository tourRepository;
+    private final AgencyRepository agencyRepository;
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public PaymentFullInfo processPayment(PaymentRequestDTO dto, Long userId) {
 
@@ -42,24 +41,47 @@ public class PaymentServiceImpl implements PaymentService {
 
         PaymentEntity payment = paymentRepository.findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, dto.getTourId(), dto.getBookingId(), PaymentStatus.PENDING).orElseThrow(() -> new NotFoundException("Payment not found"));
 
+        BookingEntity booking = bookingRepository.findById(dto.getBookingId()).orElseThrow(() -> new NotFoundException("Booking not fount"));
+
+        AgencyEntity agency = tourRepository.findById(dto.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found")).getAgency();
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("This booking does not belong to the user");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalArgumentException("Booking is not in pending state");
+        }
+
         if (!profile.getIsActive()) {
-            throw new DoNotMatchException("Profile is not active");
+            throw new IllegalArgumentException("Profile is not active");
         }
 
         if (profile.getRole() != Role.USER) {
-            throw new DoNotMatchException("Only users can make payments");
+            throw new IllegalArgumentException("Only users can make payments");
+        }
+
+        if (payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new IllegalArgumentException("Invalid payment amount");
         }
 
         if (profile.getBalance() < payment.getAmount()) {
-            throw new DoNotMatchException("Insufficient balance");
+            throw new IllegalArgumentException("Insufficient balance");
         }
 
         profile.setBalance(profile.getBalance() - payment.getAmount());
         payment.setStatus(PaymentStatus.PAID);
 
+        agency.setAmount(agency.getAmount().add(BigDecimal.valueOf(payment.getAmount())));
+
+        booking.setPaidAmount(payment.getAmount());
+        booking.setStatus(BookingStatus.CONFIRMED);
+
         profileRepository.save(profile);
         paymentRepository.save(payment);
-        bookingRepository.updateStatus(BookingStatus.CONFIRMED, dto.getBookingId());
+        bookingRepository.save(booking);
+        agencyRepository.save(agency);
+
         logger.info("Payment processed successfully for user ID: {}, tour ID: {}, booking ID: {}", userId, dto.getTourId(), dto.getBookingId());
 
         return PaymentMapper.toFullInfo(payment);
