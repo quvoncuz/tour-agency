@@ -1,17 +1,15 @@
 package quvoncuz.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import quvoncuz.enums.PaymentStatus;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

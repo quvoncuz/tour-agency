@@ -11,7 +11,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "profile")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

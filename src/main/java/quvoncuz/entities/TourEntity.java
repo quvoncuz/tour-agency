@@ -1,10 +1,7 @@
 package quvoncuz.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import quvoncuz.enums.TourStatus;
 
@@ -14,7 +11,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "tour")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
