@@ -27,4 +27,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     void updateStatus(BookingStatus bookingStatus, Long bookingId);
 
     List<BookingEntity> findAllByUserId(Long userId);
+
+    boolean existsByTourIdAndUserIdAndStatusIs(Long tourId, Long userId, BookingStatus status);
+
+    boolean existsByTourIdAndUserIdAndStatusIsNot(Long tourId, Long userId, BookingStatus status);
 }

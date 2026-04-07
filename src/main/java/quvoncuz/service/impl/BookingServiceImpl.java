@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.BookingShortInfo;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
@@ -26,6 +27,7 @@ import quvoncuz.repository.*;
 import quvoncuz.service.BookingService;
 import quvoncuz.service.ProfileService;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -42,9 +44,10 @@ public class BookingServiceImpl implements BookingService {
     private final ProfileRepository profileRepository;
 
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId) {
-        if (bookingRepository.existsByTourIdAndUserId(dto.getTourId(), userId)) {
+        if (bookingRepository.existsByTourIdAndUserIdAndStatusIsNot(dto.getTourId(), userId, BookingStatus.CANCELED)) {
             throw new AlreadyExistsException("Booking already exists for tourId: " + dto.getTourId() + " and userId: " + userId);
         }
 
@@ -68,20 +71,19 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException("Tour is not active for tourId: " + dto.getTourId());
         }
 
-
         tour.setAvailableSeats(tour.getAvailableSeats() - dto.getSeatsBooked());
 
         if (tour.getAvailableSeats() == 0) {
             tour.setStatus(TourStatus.SOLD_OUT);
         }
 
-        tourRepository.save(tour);
-
         BookingEntity booking = BookingMapper.toEntity(dto, userId);
         booking.setTotalPrice(tour.getPrice() * dto.getSeatsBooked());
 
-        bookingRepository.save(booking);
         createPayment(booking.getId(), userId);
+
+        tourRepository.save(tour);
+        bookingRepository.save(booking);
         logger.info("Booking created successfully for tourId: {} and userId: {}", dto.getTourId(), userId);
         return BookingMapper.toFullInfo(booking);
     }
@@ -140,27 +142,34 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, pageRequest).map(BookingMapper::toShortInfo);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean cancelBooking(Long bookingId, Long userId) {
         ProfileEntity profile = profileService.findById(userId);
 
         BookingEntity booking = findById(bookingId);
 
+        AgencyEntity agency = booking.getTour().getAgency();
+
         if (booking.getStatus() == BookingStatus.CANCELED) {
             throw new IllegalArgumentException("Booking is already canceled for bookingId: " + bookingId);
         }
 
         booking.setStatus(BookingStatus.CANCELED);
-        if (booking.getPaidAmount() != null && booking.getPaidAmount() > 0) {
-            profile.setBalance(profile.getBalance() + booking.getPaidAmount());
-        }
+        long balance = profile.getBalance() + booking.getPaidAmount();
+        profile.setBalance(balance);
+
+        agency.setAmount(agency.getAmount().subtract(BigDecimal.valueOf(booking.getPaidAmount())));
+
         profileRepository.save(profile);
         bookingRepository.save(booking);
+        agencyRepository.save(agency);
 
         logger.info("Booking canceled successfully for bookingId: {} and userId: {}", bookingId, userId);
         return true;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto, Long userId) {
         BookingEntity booking = findById(bookingId);
@@ -171,7 +180,7 @@ public class BookingServiceImpl implements BookingService {
 
         TourEntity tour = tourRepository.findById(booking.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found!"));
 
-        PaymentEntity payment = paymentRepository.findByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, userId);
+        PaymentEntity payment = paymentRepository.findByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, userId).get(0);
 
         if (tour.getStatus() != TourStatus.ACTIVE) {
             throw new IllegalArgumentException("Tour is not active for tourId: " + tour.getId());
@@ -201,9 +210,9 @@ public class BookingServiceImpl implements BookingService {
             paymentRepository.save(newPayment);
         }
 
-
         booking.setSeatsBooked(dto.getSeats());
         booking.setTotalPrice(tour.getPrice() * dto.getSeats());
+        booking.setStatus(BookingStatus.PENDING);
         bookingRepository.save(booking);
 
         tourRepository.save(tour);
