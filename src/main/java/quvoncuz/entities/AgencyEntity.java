@@ -1,17 +1,16 @@
 package quvoncuz.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import quvoncuz.enums.AgencyStatus;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
 @Table(name = "agency")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,6 +24,9 @@ public class AgencyEntity {
     @OneToOne
     @JoinColumn(name = "owner_id", insertable = false, updatable = false)
     private ProfileEntity owner;
+
+    @Column
+    private BigDecimal amount;
 
     @Column
     private String name;
