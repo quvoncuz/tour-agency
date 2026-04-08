@@ -1,0 +1,9 @@
+### fill balance
+POST localhost:8080/fill
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "cardNumber": "1234123412341234",
+  "balance": 10000
+}
