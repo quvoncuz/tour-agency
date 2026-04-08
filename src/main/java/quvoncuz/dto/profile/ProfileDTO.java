@@ -1,4 +1,4 @@
-package quvoncuz.dto;
+package quvoncuz.dto.profile;
 
 import lombok.Builder;
 import lombok.Data;

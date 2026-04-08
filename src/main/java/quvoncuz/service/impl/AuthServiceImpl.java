@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
         String token = Base64.getEncoder().encodeToString((profile.getUsername() + ":" + profile.getPassword()).getBytes());
         logger.info("New user registered: {}, token: {}", profile.getUsername(), token);
         return new AuthResponse(
-                 profile.getUsername(),
+                profile.getUsername(),
                 profile.getRole().name(),
                 profile.getId());
 
@@ -54,10 +54,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequestDTO dto) {
         ProfileEntity profile = profileService.findByUsername(dto.getUsername()).orElseThrow(() -> new NotFoundException("User not found"));
-        if (!profile.getPassword().equals(dto.getPassword())){
+        if (!profile.getPassword().equals(dto.getPassword())) {
             throw new DoNotMatchException("Username or password incorrect");
         }
-        if (!profile.getIsActive()){
+        if (!profile.getIsActive()) {
             throw new InvalidException("Profile is not active");
         }
 

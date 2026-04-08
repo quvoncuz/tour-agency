@@ -1,7 +1,7 @@
 package quvoncuz.service;
 
 import org.springframework.data.domain.Page;
-import quvoncuz.dto.ProfileDTO;
+import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;

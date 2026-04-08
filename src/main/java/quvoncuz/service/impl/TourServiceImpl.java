@@ -18,7 +18,6 @@ import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.AgencyRepository;
-import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.TourService;
@@ -33,6 +32,7 @@ public class TourServiceImpl implements TourService {
     private final TourRepository tourRepository;
     private final SavedTourRepository savedTourRepository;
 
+    @Transactional
     @Override
     public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
         AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
@@ -48,6 +48,7 @@ public class TourServiceImpl implements TourService {
         return TourMapper.toFullInfo(tour);
     }
 
+    @Transactional
     @Override
     public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId) {
         AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));

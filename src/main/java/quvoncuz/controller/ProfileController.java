@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import quvoncuz.dto.ProfileDTO;
+import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.service.ProfileService;
 
 @Controller
