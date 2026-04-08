@@ -3,16 +3,15 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.payment.PaymentFullInfo;
 import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
 import quvoncuz.service.PaymentService;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
-@RequestMapping("/payment")
+@RequestMapping("/api/v1/payment")
 public class PaymentController {
 
     private final PaymentService paymentService;

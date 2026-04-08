@@ -3,14 +3,13 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.tour.SaveTourRequestDTO;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.service.SavedTourService;
 
-@Controller
-@RequestMapping("/saved-tour")
+@RestController
+@RequestMapping("/api/v1/saved-tour")
 @RequiredArgsConstructor
 public class SavedTourController {
 

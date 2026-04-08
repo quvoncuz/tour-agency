@@ -3,7 +3,6 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
@@ -11,8 +10,8 @@ import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
 import quvoncuz.service.TourService;
 
-@Controller
-@RequestMapping("/tour")
+@RestController
+@RequestMapping("/api/v1/tour")
 @RequiredArgsConstructor
 public class TourController {
 

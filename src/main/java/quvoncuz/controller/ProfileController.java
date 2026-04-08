@@ -3,14 +3,13 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.service.ProfileService;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
-@RequestMapping("/profile")
+@RequestMapping("/api/v1/profile")
 public class ProfileController {
 
     private final ProfileService profileService;

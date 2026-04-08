@@ -3,7 +3,6 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.booking.BookingFullInfo;
 import quvoncuz.dto.booking.BookingShortInfo;
@@ -11,8 +10,8 @@ import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.dto.booking.UpdateBookingRequestDTO;
 import quvoncuz.service.BookingService;
 
-@Controller
-@RequestMapping("booking")
+@RestController
+@RequestMapping("/api/v1/booking")
 @RequiredArgsConstructor
 public class BookingController {
 

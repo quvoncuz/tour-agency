@@ -8,7 +8,7 @@ import quvoncuz.dto.agency.*;
 import quvoncuz.service.AgencyService;
 
 @RestController
-@RequestMapping("/agency")
+@RequestMapping("/api/v1/agency")
 @RequiredArgsConstructor
 public class AgencyController {
 

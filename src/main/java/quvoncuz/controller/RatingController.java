@@ -3,7 +3,6 @@ package quvoncuz.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.rating.RatingFullInfo;
 import quvoncuz.dto.rating.RatingRequestDTO;
@@ -12,9 +11,9 @@ import quvoncuz.dto.rating.UpdateRatingRequestDTO;
 import quvoncuz.enums.RatingType;
 import quvoncuz.service.RatingService;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
-@RequestMapping("/rating")
+@RequestMapping("/api/v1/rating")
 public class RatingController {
 
     private final RatingService ratingService;
