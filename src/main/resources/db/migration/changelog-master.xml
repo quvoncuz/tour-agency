@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Tables -->
+    <include file="db/migration/sql/tables/v1_001_profiles.sql"/>
+    <include file="db/migration/sql/tables/v1_002_agencies.sql"/>
+    <include file="db/migration/sql/tables/v1_003_tours.sql"/>
+    <include file="db/migration/sql/tables/v1_004_bookings.sql"/>
+    <include file="db/migration/sql/tables/v1_005_payments.sql" />
+    <include file="db/migration/sql/tables/v1_006_click_transactions.sql" />
+    <include file="db/migration/sql/tables/v1_007_ratings.sql" />
+    <include file="db/migration/sql/tables/v1_008_saved_tour.sql" />
+    <include file="db/migration/sql/tables/values/v1_009_user_init_value.sql" />
+    <include file="db/migration/sql/tables/v1_010_change_click_amount.sql" />
+
+    <!-- Values (seed data) -->
+    <!-- <include file="db/migration/sql/tables/values/v1_001_insert_...sql"/> -->
+
+</databaseChangeLog>
