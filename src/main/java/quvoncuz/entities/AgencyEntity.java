@@ -26,9 +26,6 @@ public class AgencyEntity {
     private ProfileEntity owner;
 
     @Column
-    private BigDecimal amount;
-
-    @Column
     private String name;
 
     @Column
