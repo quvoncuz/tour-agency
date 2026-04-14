@@ -38,6 +38,7 @@ public class PaymentMapper {
                 .tourId(entity.getTourId())
                 .bookingId(entity.getBookingId())
                 .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
                 .build();
     }
 

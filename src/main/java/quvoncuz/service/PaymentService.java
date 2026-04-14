@@ -7,7 +7,7 @@ import quvoncuz.dto.payment.PaymentShortInfo;
 
 public interface PaymentService {
 
-    PaymentFullInfo processPayment(PaymentRequestDTO dto, Long userId);
+    Page<PaymentShortInfo> findAllByRefund(int page, int size);
 
     // ADMIN
     Page<PaymentShortInfo> findAll(Long userId, int page, int size);

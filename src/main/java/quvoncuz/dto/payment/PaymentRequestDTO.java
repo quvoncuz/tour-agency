@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class PaymentRequestDTO {
     private Long tourId;
     private Long bookingId;
+    private String returnUrl;
 }
