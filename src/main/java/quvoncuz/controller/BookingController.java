@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import quvoncuz.dto.booking.BookingFullInfo;
-import quvoncuz.dto.booking.BookingShortInfo;
-import quvoncuz.dto.booking.CreateBookingRequestDTO;
-import quvoncuz.dto.booking.UpdateBookingRequestDTO;
+import quvoncuz.dto.booking.*;
 import quvoncuz.service.BookingService;
 
 @RestController
@@ -48,9 +45,9 @@ public class BookingController {
     }
 
     @DeleteMapping("/{bookingId}")
-    public ResponseEntity<Boolean> cancelBooking(@PathVariable Long bookingId,
+    public ResponseEntity<Boolean> cancelBooking(@RequestBody CancelBookingRequestDTO dto,
                                                  @RequestHeader(value = "X-User-Id") Long userId) {
-        return ResponseEntity.ok(bookingService.cancelBooking(bookingId, userId));
+        return ResponseEntity.ok(bookingService.cancelBooking(dto, userId));
     }
 
     @PutMapping("/{bookingId}")

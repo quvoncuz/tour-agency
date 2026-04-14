@@ -1,10 +1,7 @@
 package quvoncuz.service;
 
 import org.springframework.data.domain.Page;
-import quvoncuz.dto.booking.BookingFullInfo;
-import quvoncuz.dto.booking.BookingShortInfo;
-import quvoncuz.dto.booking.CreateBookingRequestDTO;
-import quvoncuz.dto.booking.UpdateBookingRequestDTO;
+import quvoncuz.dto.booking.*;
 
 public interface BookingService {
 
@@ -16,7 +13,7 @@ public interface BookingService {
 
     Page<BookingShortInfo> findAllByAgencyId(Long userId, Long adminId, int page, int size);
 
-    boolean cancelBooking(Long bookingId, Long userId);
+    boolean cancelBooking(CancelBookingRequestDTO dto, Long userId);
 
     BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto, Long userId);
 }

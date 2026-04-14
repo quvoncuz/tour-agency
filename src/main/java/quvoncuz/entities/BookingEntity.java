@@ -49,4 +49,10 @@ public class BookingEntity {
 
     @Column(name = "booked_at")
     private LocalDateTime bookedAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancel_reason")
+    private String cancelReason;
 }
