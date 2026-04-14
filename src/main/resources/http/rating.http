@@ -4,10 +4,10 @@ Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "sourceId": 2,
+  "sourceId": 3,
   "comment": "good",
   "stars": 4,
-  "type": "TOUR"
+  "type": "AGENCY"
 }
 
 ### update rating

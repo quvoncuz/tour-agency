@@ -4,8 +4,8 @@ Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "bookingId": 2,
-  "tourId": 2
+  "bookingId": 1,
+  "tourId": 1
 }
 
 ### find all ADMIN

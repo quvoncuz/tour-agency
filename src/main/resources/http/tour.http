@@ -1,5 +1,5 @@
 ### create tour
-POST localhost:8080/tour/create
+POST localhost:8080/api/v1/tour/create
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -11,11 +11,11 @@ X-User-Id: {{userId}}
   "startDate": "2026-05-24",
   "endDate": "2026-05-31",
   "maxSeats": 100,
-  "price": 299
+  "price": 100
 }
 
 ### update tour
-PUT localhost:8080/tour/2
+PUT localhost:8080/api/v1/tour/1
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -27,7 +27,7 @@ X-User-Id: {{userId}}
   "startDate": "2026-05-24",
   "endDate": "2026-05-31",
   "maxSeats": 100,
-  "price": 299
+  "price": 100
 }
 
 ### delete tour
@@ -41,7 +41,7 @@ GET localhost:8080/tour/all
 GET localhost:8080/tour/all-active
 
 ### get by id
-GET localhost:8080/tour/1
+GET localhost:8080/tour/2
 
 ### get saved tour
 GET localhost:8080/tour/saved

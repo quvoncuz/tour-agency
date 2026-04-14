@@ -1,8 +1,6 @@
 package quvoncuz.service;
 
 import org.springframework.data.domain.Page;
-import quvoncuz.dto.payment.PaymentFullInfo;
-import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentShortInfo;
 
 public interface PaymentService {

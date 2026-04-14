@@ -1,5 +1,5 @@
 ### fill balance
-POST localhost:8080/fill
+POST localhost:8080/transaction
 Content-Type: application/json
 X-User-Id: {{userId}}
 
