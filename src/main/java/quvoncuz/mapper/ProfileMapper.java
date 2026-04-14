@@ -29,7 +29,6 @@ public class ProfileMapper {
                 .username(dto.getUsername())
                 .email(dto.getEmail())
                 .password(dto.getPassword())
-                .balance(0L)
                 .role(Role.USER)
                 .gender(dto.getGender())
                 .isCreateAgency(false)
@@ -52,7 +51,6 @@ public class ProfileMapper {
                 .fullName(entity.getFullName())
                 .username(entity.getUsername())
                 .email(entity.getEmail())
-                .balance(entity.getBalance())
                 .gender(entity.getGender())
                 .build();
     }

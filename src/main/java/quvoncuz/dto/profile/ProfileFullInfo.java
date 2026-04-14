@@ -18,7 +18,5 @@ public class ProfileFullInfo {
 
     private String email;
 
-    private Long balance;
-
     private Gender gender;
 }

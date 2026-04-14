@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
+import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
@@ -45,7 +45,6 @@ public class ProfileServiceImpl implements ProfileService {
                     .username(adminUsername)
                     .email(adminEmail)
                     .password(adminPassword)
-                    .balance(0L)
                     .role(Role.ADMIN)
                     .gender(Gender.MALE)
                     .isCreateAgency(false)
@@ -128,3 +127,4 @@ public class ProfileServiceImpl implements ProfileService {
         return profileRepository.findById(profileId).orElseThrow(() -> new NotFoundException("User not found with id: " + profileId));
     }
 }
+

@@ -34,9 +34,6 @@ public class ProfileEntity {
     private String password;
 
     @Column
-    private Long balance = 0L;
-
-    @Column
     @Enumerated(EnumType.STRING)
     private Role role;
 
