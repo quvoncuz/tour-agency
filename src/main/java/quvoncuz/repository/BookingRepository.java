@@ -1,34 +1,102 @@
 package quvoncuz.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.entities.BookingEntity;
 import quvoncuz.enums.BookingStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
+@RequiredArgsConstructor
+public class BookingRepository extends AbstractRepository<BookingEntity> {
 
-    boolean existsByTourIdAndUserId(Long tourId, Long userId);
+    private final SessionFactory sessionFactory;
 
-    Page<BookingEntity> findAllByTourId(Long tourId, Pageable pageable);
+    private Session getSession() {
+        return sessionFactory.getCurrentSession();
+    }
 
-    Page<BookingEntity> findAllByTourIdIsIn(List<Long> tourIds, Pageable pageable);
+    @Override
+    public BookingEntity save(BookingEntity bookingEntity) {
+        return getSession().merge(bookingEntity);
+    }
 
-    @Modifying
-    @Transactional
-    @Query("update BookingEntity set status = ?1 where id = ?2")
-    void updateStatus(BookingStatus bookingStatus, Long bookingId);
+    @Override
+    public Optional<BookingEntity> findById(Long id) {
+        return getSession()
+                .createQuery("from BookingEntity where id = :id", BookingEntity.class)
+                .setParameter("id", id)
+                .uniqueResultOptional();
+    }
 
-    List<BookingEntity> findAllByUserId(Long userId);
+    @Override
+    public List<BookingEntity> findAll(int page, int size) {
+        return getSession().createQuery("from BookingEntity ", BookingEntity.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
 
-    boolean existsByTourIdAndUserIdAndStatusIs(Long tourId, Long userId, BookingStatus status);
+    public boolean existsByTourIdAndUserId(Long tourId, Long userId) {
+        return getSession().createQuery("select count(*) from BookingEntity where tourId = :tourId and userId = :userId", Long.class)
+                .setParameter("tourId", tourId)
+                .setParameter("userId", userId)
+                .uniqueResult() > 0;
 
-    boolean existsByTourIdAndUserIdAndStatusIsNot(Long tourId, Long userId, BookingStatus status);
+    }
+
+    public List<BookingEntity> findAllByTourId(Long tourId, int page, int size) {
+        return getSession()
+                .createQuery("from BookingEntity where tourId = :tourId", BookingEntity.class)
+                .setParameter("tourId", tourId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public List<BookingEntity> findAllByTourIdIsIn(List<Long> tourIds, int page, int size) {
+        return getSession()
+                .createQuery("from BookingEntity where tourId in : tourIds", BookingEntity.class)
+                .setParameter("tourIds", tourIds)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public void updateStatus(BookingStatus bookingStatus, Long bookingId) {
+        getSession()
+                .createQuery("update BookingEntity set status = :status where id = :id", BookingEntity.class)
+                .setParameter("status", bookingStatus)
+                .setParameter("id", bookingId)
+                .executeUpdate();
+    }
+
+    public List<BookingEntity> findAllByUserId(Long userId) {
+        return getSession()
+                .createQuery("from BookingEntity where userId = :userId", BookingEntity.class)
+                .setParameter("userId", userId)
+                .getResultList();
+    }
+
+    public boolean existsByTourIdAndUserIdAndStatusIs(Long tourId, Long userId, BookingStatus status) {
+        return getSession()
+                .createQuery("select count(*) from BookingEntity where tourId = :tourId and userId = :userId and status = :status", Long.class)
+                .setParameter("tourId", tourId)
+                .setParameter("userId", userId)
+                .setParameter("status", status)
+                .uniqueResult() > 0;
+    }
+
+    public boolean existsByTourIdAndUserIdAndStatusIsNot(Long tourId, Long userId, BookingStatus status) {
+        return getSession()
+                .createQuery("select count(*) from BookingEntity where tourId = :tourId and userId = :userId and status <> :status", Long.class)
+                .setParameter("tourId", tourId)
+                .setParameter("userId", userId)
+                .setParameter("status", status)
+                .uniqueResult() > 0;
+    }
 }

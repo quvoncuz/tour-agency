@@ -1,25 +1,78 @@
 package quvoncuz.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
+import quvoncuz.exceptions.NotFoundException;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProfileRepository extends JpaRepository<ProfileEntity, Long> {
-    Optional<ProfileEntity> findByUsername(String username);
+@RequiredArgsConstructor
+public class ProfileRepository extends AbstractRepository<ProfileEntity> {
 
-    boolean existsByUsername(String username);
+    private final SessionFactory sessionFactory;
 
-    boolean existsByEmail(String email);
+    public Session getSession() {
+        return sessionFactory.getCurrentSession();
+    }
 
-    @Modifying
-    @Transactional
-    @Query("update ProfileEntity set role = ?1 where id = ?2")
-    void updateProfileRole(Role role, long userId);
+    @Override
+    public ProfileEntity save(ProfileEntity profile) {
+        return getSession().merge(profile);
+    }
+
+    @Override
+    public Optional<ProfileEntity> findById(Long id) {
+        return getSession()
+                .createQuery("from ProfileEntity where id = :id", ProfileEntity.class)
+                .setParameter("id", id)
+                .uniqueResultOptional();
+    }
+
+    @Override
+    public List<ProfileEntity> findAll(int page, int size) {
+        return getSession().createQuery("from ProfileEntity ", ProfileEntity.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public Optional<ProfileEntity> findByUsername(String username) {
+        return getSession()
+                .createQuery("from ProfileEntity where username = :username", ProfileEntity.class)
+                .setParameter("username", username)
+                .uniqueResultOptional();
+    }
+
+    public boolean existsByUsername(String username) {
+        return getSession()
+                .createQuery("select count(*) from ProfileEntity where username = :username", Long.class)
+                .setParameter("username", username)
+                .uniqueResult() > 0;
+    }
+
+    public boolean existsByEmail(String email) {
+        return getSession()
+                .createQuery("select count(*) from ProfileEntity where email = :email", Long.class)
+                .setParameter("email", email)
+                .uniqueResult() > 0;
+    }
+
+    public void deleteById(Long id) {
+        ProfileEntity profile = findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+        getSession().remove(profile);
+    }
+
+    public void updateProfileRole(Role role, long userId) {
+        getSession()
+                .createQuery("update ProfileEntity set role = :role where id = :userId")
+                .setParameter("role", role)
+                .setParameter("userId", userId)
+                .executeUpdate();
+    }
 }

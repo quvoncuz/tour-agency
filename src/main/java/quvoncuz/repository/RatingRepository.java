@@ -1,8 +1,8 @@
 package quvoncuz.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
 import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.RatingType;
@@ -11,15 +11,83 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RatingRepository extends JpaRepository<RatingEntity, Long> {
+@RequiredArgsConstructor
+public class RatingRepository extends AbstractRepository<RatingEntity> {
 
-    Page<RatingEntity> findBySourceIdAndType(Long sourceId, RatingType type, Pageable pageable);
+    private final SessionFactory sessionFactory;
 
-    boolean deleteByIdAndUserId(Long id, Long userId);
+    public Session getSession() {
+        return sessionFactory.getCurrentSession();
+    }
 
-    Page<RatingEntity> findAllByUserId(Long userId, Pageable pageable);
+    @Override
+    public RatingEntity save(RatingEntity entity) {
+        return getSession().merge(entity);
+    }
 
-    List<RatingEntity> findAllBySourceIdAndType(Long sourceId, RatingType type);
+    @Override
+    public Optional<RatingEntity> findById(Long id) {
+        return getSession()
+                .createQuery("from RatingEntity where id = :id", RatingEntity.class)
+                .setParameter("id", id)
+                .uniqueResultOptional();
+    }
 
-    Optional<RatingEntity> findByUserIdAndSourceIdAndType(Long userId, Long sourceId, RatingType type);
+    @Override
+    public List<RatingEntity> findAll(int page, int size) {
+        return getSession().createQuery("from RatingEntity ", RatingEntity.class)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public List<RatingEntity> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size) {
+        return getSession()
+                .createQuery("from RatingEntity where sourceId = :sourceId and type = :type", RatingEntity.class)
+                .setParameter("sourceId", sourceId)
+                .setParameter("type", type)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public boolean deleteByIdAndUserId(Long id, Long userId) {
+        Optional<RatingEntity> ratingEntity = getSession()
+                .createQuery("from RatingEntity where id = :id and userId = :userId", RatingEntity.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
+                .uniqueResultOptional();
+
+        if (ratingEntity.isEmpty()) {
+            return true;
+        }
+        getSession().remove(ratingEntity.get());
+        return true;
+    }
+
+    public List<RatingEntity> findAllByUserId(Long userId, int page, int size) {
+        return getSession()
+                .createQuery("from RatingEntity where userId = :userId", RatingEntity.class)
+                .setParameter("userId", userId)
+                .setFirstResult(page * size)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public List<RatingEntity> findAllBySourceIdAndType(Long sourceId, RatingType type) {
+        return getSession()
+                .createQuery("from RatingEntity where sourceId = :sourceId and type = :type", RatingEntity.class)
+                .setParameter("sourceId", sourceId)
+                .setParameter("type", type)
+                .getResultList();
+    }
+
+    public Optional<RatingEntity> findByUserIdAndSourceIdAndType(Long userId, Long sourceId, RatingType type) {
+        return getSession()
+                .createQuery("from RatingEntity where userId = :userId and sourceId = :sourceId and type = :type", RatingEntity.class)
+                .setParameter("userId", userId)
+                .setParameter("sourceId", sourceId)
+                .setParameter("type", type)
+                .uniqueResultOptional();
+    }
 }
