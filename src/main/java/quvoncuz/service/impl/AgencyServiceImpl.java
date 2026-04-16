@@ -71,6 +71,7 @@ public class AgencyServiceImpl implements AgencyService {
             profile.setIsCreateAgency(true);
             agency.setStatus(AgencyStatus.ACCEPTED);
             agency.setApproved(true);
+            profileRepository.save(profile);
         } else {
             agency.setStatus(AgencyStatus.REJECTED);
         }
