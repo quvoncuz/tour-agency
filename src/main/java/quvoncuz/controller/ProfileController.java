@@ -1,13 +1,15 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.service.ProfileService;
 
-@RestController
+import java.util.List;
+
+@Controller
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/profile")
 public class ProfileController {
@@ -27,7 +29,7 @@ public class ProfileController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Page<ProfileDTO>> getAllProfiles(@RequestHeader(value = "X-User-Id") Long adminId,
+    public ResponseEntity<List<ProfileDTO>> getAllProfiles(@RequestHeader(value = "X-User-Id") Long adminId,
                                                            @RequestParam(defaultValue = "1") int page,
                                                            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(profileService.getAllProfiles(adminId, page, size));

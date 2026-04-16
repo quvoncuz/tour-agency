@@ -3,9 +3,6 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.booking.*;
@@ -30,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
@@ -86,42 +84,48 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
         ProfileEntity profile = profileService.findById(loginId);
         if (profile.getRole() != Role.ADMIN && !loginId.equals(userId)) {
             throw new IllegalArgumentException("You don't have permission to view bookings for this user. userId: " + userId + ", loginId: " + loginId);
         }
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        Page<BookingEntity> pageResult = bookingRepository.findAll(pageRequest);
+        List<BookingEntity> pageResult = bookingRepository.findAll(page - 1, size);
         logger.info("Finding all bookings for userId: {} with pagination - page: {}, size: {}", userId, page, size);
-        return pageResult.map(BookingMapper::toShortInfo);
+        return pageResult
+                .stream()
+                .map(BookingMapper::toShortInfo)
+                .toList();
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
         logger.info("Finding all bookings for tourId: {} with pagination - page: {}, size: {}", tourId, page, size);
         ProfileEntity profile = profileService.findById(loginId);
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        Page<BookingEntity> pageResult = bookingRepository.findAllByTourId(tourId, pageRequest);
+        List<BookingEntity> pageResult = bookingRepository.findAllByTourId(tourId, page - 1, size);
         if (profile.getRole() == Role.ADMIN) {
-            return pageResult.map(BookingMapper::toShortInfo);
+            return pageResult
+                    .stream()
+                    .map(BookingMapper::toShortInfo)
+                    .toList();
         } else if (profile.getRole() == Role.AGENCY) {
             TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
-            if (tour.getAgency().getId().equals(loginId)) {
-                return pageResult.map(BookingMapper::toShortInfo);
+            if (tour.getAgencyId().equals(loginId)) {
+                return pageResult
+                        .stream()
+                        .map(BookingMapper::toShortInfo)
+                        .toList();
             } else throw new DoNotMatchException("You don't have permission");
         } else {
-            List<BookingShortInfo> content = pageResult.getContent()
+            return pageResult
                     .stream()
                     .filter(bookingEntity -> bookingEntity.getUserId().equals(loginId))
                     .map(BookingMapper::toShortInfo)
                     .toList();
-            return new PageImpl<>(content, pageRequest, pageResult.getTotalElements());
         }
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
+    public List<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
         ProfileEntity profile = profileService.findById(loginId);
         AgencyEntity agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new NotFoundException("Agency not found"));
@@ -130,13 +134,15 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException("Only the agency owner or admin can view bookings for this agency. agencyId: " + agencyId + ", loginId: " + loginId);
         }
 
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
         List<Long> tourByAgencyId = tourRepository.findAllByAgencyId(agencyId)
                 .stream()
                 .map(TourEntity::getId)
                 .toList();
         logger.info("Finding all bookings for agencyId: {} with pagination - page: {}, size: {}", loginId, page, size);
-        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, pageRequest).map(BookingMapper::toShortInfo);
+        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, page - 1, size)
+                .stream()
+                .map(BookingMapper::toShortInfo)
+                .toList();
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -164,7 +170,6 @@ public class BookingServiceImpl implements BookingService {
             if (payment.getStatus() == PaymentStatus.PAID) {
                 payment.setStatus(PaymentStatus.REFUND);
             } else payment.setStatus(PaymentStatus.FAILED);
-
             payment.setCancelledAt(LocalDateTime.now());
         });
 

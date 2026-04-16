@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import quvoncuz.enums.AgencyStatus;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Entity

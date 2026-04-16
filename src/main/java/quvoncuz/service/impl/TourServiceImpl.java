@@ -1,8 +1,6 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
@@ -25,6 +23,7 @@ import quvoncuz.service.TourService;
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class TourServiceImpl implements TourService {
 
@@ -44,7 +43,7 @@ public class TourServiceImpl implements TourService {
         TourEntity tour = TourMapper.toEntity(dto);
         tour.setAgencyId(agency.getId());
 
-        tourRepository.save(tour);
+        tour = tourRepository.save(tour);
         return TourMapper.toFullInfo(tour);
     }
 
@@ -80,16 +79,19 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public Page<TourShortInfo> getAllTour(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return tourRepository.findAll(pageRequest).map(TourMapper::toShortInfo);
+    public List<TourShortInfo> getAllTour(int page, int size) {
+        return tourRepository.findAll(page, size)
+                .stream()
+                .map(TourMapper::toShortInfo)
+                .toList();
     }
 
     @Override
-    public Page<TourShortInfo> getAllActiveTour(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return tourRepository.findAll(pageRequest)
-                .map(TourMapper::toShortInfo);
+    public List<TourShortInfo> getAllActiveTour(int page, int size) {
+        return tourRepository.findAll(page, size)
+                .stream()
+                .map(TourMapper::toShortInfo)
+                .toList();
     }
 
     @Override
@@ -100,25 +102,27 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
+    public List<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
         List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserId(userId)
                 .stream()
                 .map(SavedTourEntity::getTourId)
                 .toList();
-        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
-                .map(TourMapper::toShortInfo);
+        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, page - 1, size)
+                .stream()
+                .map(TourMapper::toShortInfo)
+                .toList();
     }
 
     @Override
-    public Page<TourShortInfo> search(String query, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return tourRepository.findAllByQuery("%" + query + "%", pageRequest)
-                .map(TourMapper::toShortInfo);
+    public List<TourShortInfo> search(String query, int page, int size) {
+        return tourRepository.findAllByQuery("%" + query + "%", page - 1, size)
+                .stream()
+                .map(TourMapper::toShortInfo)
+                .toList();
     }
 
-    private void incrementViewCount(TourEntity tour){
-        tour.setViewCount(tour.getViewCount()+1);
+    private void incrementViewCount(TourEntity tour) {
+        tour.setViewCount(tour.getViewCount() + 1);
         tourRepository.save(tour);
     }
 }

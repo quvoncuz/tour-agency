@@ -1,13 +1,15 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.agency.*;
 import quvoncuz.service.AgencyService;
 
-@RestController
+import java.util.List;
+
+@Controller
 @RequestMapping("/api/v1/agency")
 @RequiredArgsConstructor
 public class AgencyController {
@@ -29,7 +31,7 @@ public class AgencyController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<Page<AgencyShortInfo>> getPendingAgencies(
+    public ResponseEntity<List<AgencyShortInfo>> getPendingAgencies(
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -37,7 +39,7 @@ public class AgencyController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Page<AgencyFullInfo>> getAllAgencies(@RequestParam(defaultValue = "1") int page,
+    public ResponseEntity<List<AgencyFullInfo>> getAllAgencies(@RequestParam(defaultValue = "1") int page,
                                                                @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(agencyService.getAllAgencies(page, size));
     }

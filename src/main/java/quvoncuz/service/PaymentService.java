@@ -1,17 +1,18 @@
 package quvoncuz.service;
 
-import org.springframework.data.domain.Page;
 import quvoncuz.dto.payment.PaymentShortInfo;
+
+import java.util.List;
 
 public interface PaymentService {
 
-    Page<PaymentShortInfo> findAllByRefund(int page, int size);
+    List<PaymentShortInfo> findAllByRefund(int page, int size);
 
     // ADMIN
-    Page<PaymentShortInfo> findAll(Long userId, int page, int size);
+    List<PaymentShortInfo> findAll(Long userId, int page, int size);
 
-    Page<PaymentShortInfo> findAllByUserId(Long userId, int page, int size);
+    List<PaymentShortInfo> findAllByUserId(Long userId, int page, int size);
 
     //ADMIN and AGENCY
-    Page<PaymentShortInfo> findAllByTourId(Long tourId, Long userId, int page, int size);
+    List<PaymentShortInfo> findAllByTourId(Long tourId, Long userId, int page, int size);
 }

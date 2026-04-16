@@ -8,11 +8,10 @@ import quvoncuz.enums.ClickTransactionStatus;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "click_transactions")
+@Table(name = "click_transaction")
 @Getter
 @Setter
 @Builder
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClickTransactionEntity {

@@ -1,13 +1,10 @@
 package quvoncuz.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.entities.ProfileEntity;
@@ -19,25 +16,26 @@ import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
     private final Logger logger = LoggerFactory.getLogger(ProfileServiceImpl.class);
     private final ProfileRepository profileRepository;
 
-    @Value("${admin.default.username}")
-    private String adminUsername;
+    //    @Value("${admin.default.username}")
+    private final String adminUsername = "admin";
 
-    @Value("${admin.default.email}")
-    private String adminEmail;
+    //    @Value("${admin.default.email}")
+    private final String adminEmail = "admin@admin.uz";
 
-    @Value("${admin.default.password}")
-    private String adminPassword;
+    //    @Value("${admin.default.password}")
+    private final String adminPassword = "Admin123";
 
-    @PostConstruct
     public void initDefaultAdmin() {
         if (!existsByUsername(adminUsername)) {
             ProfileEntity admin = ProfileEntity.builder()
@@ -63,7 +61,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         ProfileEntity profile = ProfileMapper.toEntity(dto);
 
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
 
         logger.info("Created new profile with username: {}", profile.getUsername());
         return profile;
@@ -105,16 +103,18 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
+    public List<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
         ProfileEntity admin = findById(adminId);
         if (admin.getRole() != Role.ADMIN) {
             throw new NotFoundException("User with id " + adminId + " is not an admin");
         }
 
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        Page<ProfileEntity> allProfile = profileRepository.findAll(pageRequest);
+        List<ProfileEntity> allProfile = profileRepository.findAll(page, size);
         logger.info("Retrieved all profiles for admin with id: {}", adminId);
-        return allProfile.map(ProfileMapper::toDTO);
+        return allProfile
+                .stream()
+                .map(ProfileMapper::toDTO)
+                .toList();
     }
 
     @Override

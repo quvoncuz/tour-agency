@@ -1,7 +1,5 @@
 package quvoncuz.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,12 +46,11 @@ public class ClickService {
     @Value("${click.secret-key}")
     private String secretKey;
 
-    private final ObjectMapper objectMapper;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
 
-    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request, Long userId) throws JsonProcessingException {
+    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request, Long userId) {
         PaymentEntity payment = paymentRepository
                 .findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, request.getTourId(), request.getBookingId(), PaymentStatus.PENDING)
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
@@ -71,8 +68,6 @@ public class ClickService {
                         .build()
         );
 
-        log.info("In creating payment url");
-
         log.info("Transaction created: id={}, merchantTransId={}, amount={}",
                 save.getId(), save.getMerchantTransId(), save.getAmount());
         return PaymentResponse.builder()
@@ -83,7 +78,7 @@ public class ClickService {
     @Transactional
     public ClickResponse prepare(PrepareRequest request) {
 
-        log.error(">>> PREPARE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
+        log.info(">>> PREPARE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
                 request.getClick_trans_id(),
                 request.getService_id(),
                 request.getMerchant_trans_id(),
@@ -102,16 +97,13 @@ public class ClickService {
                 request.getSign_time()
         );
 
-        log.error(">>> MY sign  : [{}]", expectedSign);
-        log.error(">>> HIS sign : [{}]", request.getSign_string());
-        log.error(">>> SECRET   : [{}]", secretKey);
-
         if (!expectedSign.equals(request.getSign_string())) {
             log.error("Signature failed in Prepare-method: {}", request.getSign_string());
             return buildError(ClickErrorCode.SIGN_CHECK_FAILED, request.getMerchant_trans_id(), null, request.getClick_trans_id());
         }
 
         if (request.getAction() != 0) {
+            log.error("Action failed in Prepare methods. Expected: 0, result: {}", request.getAction());
             return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchant_trans_id(), null, request.getClick_trans_id());
         }
 
@@ -160,7 +152,7 @@ public class ClickService {
     @Transactional
     public ClickResponse complete(CompleteRequest request) {
 
-        log.error(">>> COMPLETE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
+        log.info(">>> COMPLETE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
                 request.getClick_trans_id(),
                 request.getService_id(),
                 request.getMerchant_trans_id(),
@@ -194,7 +186,7 @@ public class ClickService {
                 request.getMerchant_prepare_id().longValue(), request.getMerchant_trans_id());
 
         if (optionalTransaction.isEmpty()) {
-            log.error("Transaction not exists error in Complete method {}", request.toString());
+            log.error("Transaction not exists error in Complete method {}", request);
             return buildError(ClickErrorCode.TRANSACTION_NOT_EXIST, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
         }
 
@@ -222,7 +214,7 @@ public class ClickService {
             log.info("transaction begun at status");
             transaction.setStatus(ClickTransactionStatus.PAID);
             log.info("transaction begun at save");
-            ClickTransactionEntity paidTransaction = clickTransactionRepository.save(transaction);
+            transaction = clickTransactionRepository.save(transaction);
 
             log.info("Transaction paid: {}", /*objectMapper.writeValueAsString(paidTransaction)*/ transaction.toString());
             PaymentEntity payment = paymentRepository.findById(Long.parseLong(transaction.getMerchantTransId()))
@@ -251,11 +243,11 @@ public class ClickService {
                                      Integer merchantPrepareId,
                                      Long clickTransId) {
         return ClickResponse.builder()
-                .error(code.getCode())
-                .error_note(code.getNote())
+                .click_trans_id(clickTransId)
                 .merchant_trans_id(merchantTransId)
                 .merchant_prepare_id(merchantPrepareId)
-                .click_trans_id(clickTransId)
+                .error(code.getCode())
+                .error_note(code.getNote())
                 .build();
     }
 

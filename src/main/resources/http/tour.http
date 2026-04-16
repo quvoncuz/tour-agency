@@ -31,20 +31,20 @@ X-User-Id: {{userId}}
 }
 
 ### delete tour
-DELETE localhost:8080/tour/1
+DELETE localhost:8080/api/v1/tour/1
 X-User-Id: {{userId}}
 
 ### get all tour
-GET localhost:8080/tour/all
+GET localhost:8080/api/v1/tour/all
 
 ### get all actice tour
-GET localhost:8080/tour/all-active
+GET localhost:8080/api/v1/tour/all-active
 
 ### get by id
-GET localhost:8080/tour/2
+GET localhost:8080/api/v1/tour/2
 
 ### get saved tour
-GET localhost:8080/tour/saved
+GET localhost:8080/api/v1/tour/saved
 
 ### search
-GET localhost:8080/tour/search?query=Italy
+GET localhost:8080/api/v1/tour/search?query=Italy

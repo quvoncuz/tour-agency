@@ -3,8 +3,6 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.rating.RatingFullInfo;
@@ -29,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class RatingServiceImpl implements RatingService {
 
@@ -84,19 +83,21 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    public Page<RatingShortInfo> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
+    public List<RatingShortInfo> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size) {
         logger.info("Finding ratings for source {} of type {}, page {}, size {}", sourceId, type, page, size);
-        return ratingRepository.findBySourceIdAndType(sourceId, type, pageRequest)
-                .map(RatingMapper::toShortInfo);
+        return ratingRepository.findBySourceIdAndType(sourceId, type, page - 1, size)
+                .stream()
+                .map(RatingMapper::toShortInfo)
+                .toList();
     }
 
     @Override
-    public Page<RatingShortInfo> findByUserId(Long userId, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
+    public List<RatingShortInfo> findByUserId(Long userId, int page, int size) {
         logger.info("Finding ratings for user {}", userId);
-        return ratingRepository.findAllByUserId(userId, pageRequest)
-                .map(RatingMapper::toShortInfo);
+        return ratingRepository.findAllByUserId(userId, page - 1, size)
+                .stream()
+                .map(RatingMapper::toShortInfo)
+                .toList();
     }
 
     @Override

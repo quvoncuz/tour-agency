@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.AuthResponse;
 import quvoncuz.dto.auth.LoginRequestDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
@@ -19,6 +20,7 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 

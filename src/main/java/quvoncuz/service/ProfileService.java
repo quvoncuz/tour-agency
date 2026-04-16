@@ -1,11 +1,11 @@
 package quvoncuz.service;
 
-import org.springframework.data.domain.Page;
-import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
+import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProfileService {
@@ -21,7 +21,7 @@ public interface ProfileService {
 
     ProfileDTO getProfileById(Long id, Long adminId);
 
-    Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
+    List<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
 
     void updateRole(Role role, long userId);
 
