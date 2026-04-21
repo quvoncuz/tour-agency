@@ -99,4 +99,31 @@ public class BookingRepository extends AbstractRepository<BookingEntity> {
                 .setParameter("status", status)
                 .uniqueResult() > 0;
     }
+
+    public Optional<BookingEntity> findByIdAndUserId(long bookingId, long userId) {
+        return getSession()
+                .createQuery("from BookingEntity where id = :id and userId = :userId",  BookingEntity.class)
+                .setParameter("id", bookingId)
+                .setParameter("userId", userId)
+                .uniqueResultOptional();
+    }
+
+    public List<BookingEntity> findAllByTourIdAndStatus(Long tourId, BookingStatus bookingStatus) {
+        return getSession()
+                .createQuery("from BookingEntity where tourId = :tourId and status = :status", BookingEntity.class)
+                .setParameter("tourId", tourId)
+                .setParameter("status", bookingStatus)
+                .getResultList();
+    }
+
+    public void saveAll(List<BookingEntity> bookings) {
+        bookings.forEach(booking -> getSession().merge(booking));
+    }
+
+    public List<BookingEntity> findAllUpdated(long userId) {
+        return getSession().createQuery("from BookingEntity where userId = :userId and status = :status", BookingEntity.class)
+                .setParameter("userId", userId)
+                .setParameter("status", BookingStatus.ON_UPDATE)
+                .getResultList();
+    }
 }

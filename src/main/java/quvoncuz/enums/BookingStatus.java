@@ -3,5 +3,6 @@ package quvoncuz.enums;
 public enum BookingStatus {
     PENDING,
     CONFIRMED,
-    CANCELED
+    CANCELED,
+    ON_UPDATE
 }
