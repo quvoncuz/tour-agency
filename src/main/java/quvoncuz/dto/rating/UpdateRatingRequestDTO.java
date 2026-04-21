@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class UpdateRatingRequestDTO {
-    private Integer stars;
+    private int stars;
     private String comment;
 }

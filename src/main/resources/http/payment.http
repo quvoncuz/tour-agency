@@ -1,5 +1,5 @@
 ### process payment
-POST localhost:8080/api/v1/payment/process
+POST localhost:8080/api/v1/payments/process
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -9,13 +9,13 @@ X-User-Id: {{userId}}
 }
 
 ### find all ADMIN
-GET localhost:8080/api/v1/payment/all
+GET localhost:8080/api/v1/payments/all
 X-User-Id: {{userId}}
 
 ### find all by user id
-GET localhost:8080/api/v1/payment/by-user
+GET localhost:8080/api/v1/payments/by-user
 X-User-Id: {{userId}}
 
 ### find all by tour id
-GET localhost:8080/api/v1/payment/by-tour?tourId=2
+GET localhost:8080/api/v1/payments/by-tour?tourId=2
 X-User-Id: {{userId}}

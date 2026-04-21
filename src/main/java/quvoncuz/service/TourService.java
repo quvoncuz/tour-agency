@@ -13,6 +13,8 @@ public interface TourService {
 
     TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId);
 
+    TourFullInfo updateTourPrice(Long tourId, Long newPrice, Long userId);
+
     Boolean deleteTour(Long tourId, Long ownerId);
 
     List<TourShortInfo> getAllTour(int page, int size);

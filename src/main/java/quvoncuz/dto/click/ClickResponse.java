@@ -1,5 +1,6 @@
 package quvoncuz.dto.click;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -8,9 +9,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClickResponse {
-    private Long click_trans_id;
-    private String merchant_trans_id;
-    private Integer merchant_prepare_id;
+    @JsonProperty("click_trans_id")
+    private Long clickTransId;
+    @JsonProperty("merchant_trans_id")
+    private String merchantTransId;
+    @JsonProperty("merchant_prepare_id")
+    private Integer merchantPrepareId;
     private int error;
-    private String error_note;
+    @JsonProperty("error_note")
+    private String errorNote;
 }

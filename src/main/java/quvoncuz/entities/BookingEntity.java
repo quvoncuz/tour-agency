@@ -7,7 +7,7 @@ import quvoncuz.enums.BookingStatus;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "booking")
+@Table(name = "bookings")
 @Getter
 @Setter
 @Builder

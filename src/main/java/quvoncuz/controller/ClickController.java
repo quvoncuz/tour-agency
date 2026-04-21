@@ -1,5 +1,6 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -12,25 +13,28 @@ import quvoncuz.dto.payment.PaymentResponse;
 import quvoncuz.service.ClickService;
 
 @Controller
-@RequestMapping("/api/v1/click")
+@RequestMapping("/click")
 @RequiredArgsConstructor
 public class ClickController {
 
     private final ClickService clickService;
 
     @PostMapping("/pay")
-    public ResponseEntity<PaymentResponse> pay(@RequestBody PaymentRequestDTO request,
-                                               @RequestHeader(value = "X-User-Id") Long userId) {
+    public ResponseEntity<PaymentResponse> pay(
+            @Valid @RequestBody PaymentRequestDTO request,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(clickService.generatePaymentUrl(request, userId));
     }
 
     @PostMapping("/prepare")
-    public ResponseEntity<ClickResponse> prepare(@ModelAttribute PrepareRequest request) {
+    public ResponseEntity<ClickResponse> prepare(
+            @ModelAttribute PrepareRequest request) {
         return ResponseEntity.ok(clickService.prepare(request));
     }
 
     @PostMapping("/complete")
-    public ResponseEntity<ClickResponse> complete(@ModelAttribute CompleteRequest request) {
+    public ResponseEntity<ClickResponse> complete(
+            @ModelAttribute CompleteRequest request) {
         return ResponseEntity.ok(clickService.complete(request));
     }
 }
