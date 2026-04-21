@@ -36,7 +36,7 @@ public class TourServiceImpl implements TourService {
     private final AgencyService agencyService;
     private final BookingRepository bookingRepository;
     private final ProfileService profileService;
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
