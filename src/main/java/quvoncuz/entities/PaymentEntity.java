@@ -7,7 +7,7 @@ import quvoncuz.enums.PaymentStatus;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment")
+@Table(name = "payments")
 @Getter
 @Setter
 @Builder

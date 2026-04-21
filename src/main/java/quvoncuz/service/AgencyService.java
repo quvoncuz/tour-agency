@@ -1,8 +1,10 @@
 package quvoncuz.service;
 
 import quvoncuz.dto.agency.*;
+import quvoncuz.entities.AgencyEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AgencyService {
     AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId);
@@ -18,4 +20,6 @@ public interface AgencyService {
     Boolean deleteById(Long agencyId, Long userId);
 
     AgencyDTO findByAgencyId(Long agencyId);
+
+    Optional<AgencyEntity> findByOwnerId(Long ownerId);
 }

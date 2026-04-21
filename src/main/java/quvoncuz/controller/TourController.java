@@ -1,5 +1,6 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -13,60 +14,75 @@ import quvoncuz.service.TourService;
 import java.util.List;
 
 @Controller
-@RequestMapping("/api/v1/tour")
+@RequestMapping("/tours")
 @RequiredArgsConstructor
 public class TourController {
 
     private final TourService tourService;
 
-    @PostMapping("/create")
-    public ResponseEntity<TourFullInfo> createTour(@RequestBody CreateTourRequestDTO dto,
-                                                   @RequestHeader(value = "X-User-Id") Long userId) {
+    @PostMapping
+    public ResponseEntity<TourFullInfo> createTour(
+            @Valid @RequestBody CreateTourRequestDTO dto,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(tourService.createTour(dto, userId));
     }
 
     @PutMapping("/{tourId}")
-    public ResponseEntity<TourFullInfo> updateTour(@PathVariable Long tourId,
-                                                   @RequestBody UpdateTourRequestDTO dto,
-                                                   @RequestHeader(value = "X-User-Id") Long userId) {
+    public ResponseEntity<TourFullInfo> updateTour(
+            @PathVariable long tourId,
+            @Valid @RequestBody UpdateTourRequestDTO dto,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(tourService.updateTour(tourId, dto, userId));
     }
 
+    @PutMapping("/{tourId}/update")
+    public ResponseEntity<TourFullInfo> updateTourPrice(@PathVariable long tourId,
+                                                        @RequestBody long price,
+                                                        @RequestHeader(value = "X-User-Id") long userId) {
+        return ResponseEntity.ok(tourService.updateTourPrice(tourId, price, userId));
+    }
+
     @DeleteMapping("/{tourId}")
-    public ResponseEntity<Boolean> delete(@PathVariable Long tourId,
-                                          @RequestHeader(value = "X-User-Id") Long ownerId) {
+    public ResponseEntity<Boolean> delete(
+            @PathVariable long tourId,
+            @RequestHeader(value = "X-User-Id") long ownerId) {
         return ResponseEntity.ok(tourService.deleteTour(tourId, ownerId));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<TourShortInfo>> getAllTour(@RequestParam(defaultValue = "1") int page,
-                                                          @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<TourShortInfo>> getAllTour(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.getAllTour(page, size));
     }
 
 
     @GetMapping("/all-active")
-    public ResponseEntity<List<TourShortInfo>> getAllActiveTour(@RequestParam(defaultValue = "1") int page,
-                                                                @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<TourShortInfo>> getAllActiveTour(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.getAllActiveTour(page, size));
     }
 
     @GetMapping("/{tourId}")
-    public ResponseEntity<TourFullInfo> getById(@PathVariable Long tourId) {
+    public ResponseEntity<TourFullInfo> getById(
+            @PathVariable long tourId) {
         return ResponseEntity.ok(tourService.getById(tourId));
     }
 
     @GetMapping("/saved")
-    public ResponseEntity<List<TourShortInfo>> getSavedTourId(@RequestHeader(value = "X-User-Id") Long userId,
-                                                              @RequestParam(defaultValue = "1") int page,
-                                                              @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<TourShortInfo>> getSavedTourId(
+            @RequestHeader(value = "X-User-Id") long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.getAllSavedTours(userId, page, size));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TourShortInfo>> search(@RequestParam String query,
-                                                      @RequestParam(defaultValue = "1") int page,
-                                                      @RequestParam(defaultValue = "20") int size) {
+    public ResponseEntity<List<TourShortInfo>> search(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.search(query, page, size));
     }
 }

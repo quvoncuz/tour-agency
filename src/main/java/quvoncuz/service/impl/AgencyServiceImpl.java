@@ -10,6 +10,7 @@ import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.Role;
+import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -19,9 +20,9 @@ import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.AgencyService;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class AgencyServiceImpl implements AgencyService {
 
@@ -30,13 +31,14 @@ public class AgencyServiceImpl implements AgencyService {
     private final AgencyRepository agencyRepository;
 
     @Override
+    @Transactional
     public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId) {
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.USER)) {
             throw new PermissionDeniedException("You have a agency already");
         }
         if (profile.getIsCreateAgency()) {
-            throw new IllegalArgumentException("You already created agency!");
+            throw new AlreadyExistsException("You already created agency!");
         }
         AgencyEntity agency = AgencyEntity.builder()
                 .id(profile.getId())
@@ -57,16 +59,19 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    @Transactional
     public Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId) {
-        ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        ProfileEntity admin = profileRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
         if (!admin.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission to approve or reject this agency");
+            throw new PermissionDeniedException("You don't have permission");
         }
 
         AgencyEntity agency = findById(dto.getAgencyId());
 
         if (dto.getApprove()) {
-            ProfileEntity profile = profileRepository.findById(agency.getOwnerId()).orElseThrow(() -> new NotFoundException("User not found"));
+            ProfileEntity profile = profileRepository.findById(agency.getOwnerId())
+                    .orElseThrow(() -> new NotFoundException("User not found"));
             profile.setRole(Role.AGENCY);
             profile.setIsCreateAgency(true);
             agency.setStatus(AgencyStatus.ACCEPTED);
@@ -81,10 +86,12 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size) {
-        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        ProfileEntity profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission to view pending agencies");
+            throw new PermissionDeniedException("You don't have permission");
         }
 
         logger.info("Admin with id {} requested pending agencies", userId);
@@ -97,6 +104,7 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AgencyFullInfo> getAllAgencies(int page, int size) {
         logger.info("Requested all agencies");
         return agencyRepository.findAll(page - 1, size)
@@ -106,6 +114,7 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    @Transactional
     public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId) {
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         AgencyEntity agency = findById(agencyId);
@@ -130,7 +139,7 @@ public class AgencyServiceImpl implements AgencyService {
     public Boolean deleteById(Long agencyId, Long userId) {
         ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!admin.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission to delete this agency");
+            throw new PermissionDeniedException("You don't have permission");
         }
         logger.info("Admin with id {} deleted agency with id {}", userId, agencyId);
         agencyRepository.deleteById(agencyId);
@@ -138,9 +147,16 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AgencyDTO findByAgencyId(Long agencyId) {
         logger.info("Requested agency with id {}", agencyId);
         return AgencyMapper.toDTO(findById(agencyId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<AgencyEntity> findByOwnerId(Long ownerId) {
+        return agencyRepository.findByOwnerId(ownerId);
     }
 
     private AgencyEntity findById(Long agencyId) {

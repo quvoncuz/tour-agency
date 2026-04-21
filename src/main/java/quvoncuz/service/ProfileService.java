@@ -2,6 +2,8 @@ package quvoncuz.service;
 
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.dto.profile.ProfileDTO;
+import quvoncuz.dto.profile.ProfileFullInfo;
+import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
 
@@ -10,6 +12,8 @@ import java.util.Optional;
 
 public interface ProfileService {
     ProfileEntity create(RegistrationRequestDTO dto);
+
+    ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId, Long loginId);
 
     Optional<ProfileEntity> findByUsername(String username);
 

@@ -20,7 +20,6 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
@@ -30,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private static final Pattern pattern = Pattern.compile(EMAIL_REGEX);
 
     @Override
+    @Transactional
     public AuthResponse register(RegistrationRequestDTO dto) {
         if (profileService.existsByEmail(dto.getEmail())) {
             throw new AlreadyExistsException("Email already exists!");
@@ -54,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequestDTO dto) {
         ProfileEntity profile = profileService.findByUsername(dto.getUsername()).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getPassword().equals(dto.getPassword())) {

@@ -1,5 +1,5 @@
 ### apply agency
-POST localhost:8080/api/v1/agency/apply
+POST localhost:8080/api/v1/agencies
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -13,24 +13,24 @@ X-User-Id: {{userId}}
 }
 
 ### approve agency
-POST localhost:8080/api/v1/agency/approve
+POST localhost:8080/api/v1/agencies/approve
 Content-Type: application/json
 X-User-Id: {{userId}}
 
 {
-  "agencyId": 3,
+  "agencyId": 2,
   "approve": true
 }
 
 ### pending agencies
-GET localhost:8080/api/v1/agency/pending
+GET localhost:8080/api/v1/agencies/pending
 X-User-Id: {{userId}}
 
 ### all agencies
-GET localhost:8080/api/v1/agency/all
+GET localhost:8080/api/v1/agencies/all
 
 ### update agency
-PUT localhost:8080/api/v1/agency/update/1
+PUT localhost:8080/api/v1/agencies/1
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -44,9 +44,9 @@ X-User-Id: {{userId}}
 }
 
 ### get by id
-GET localhost:8080/api/v1/agency/3
+GET localhost:8080/api/v1/agencies/3
 
 ### delete by id
-DELETE localhost:8080/api/v1/agency/1
+DELETE localhost:8080/api/v1/agencies/1
 X-User-Id: {{userId}}
 

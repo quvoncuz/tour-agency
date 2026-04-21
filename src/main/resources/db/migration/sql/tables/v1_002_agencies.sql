@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset dev:v1_002_agencies
-create table agency
+create table agencies
 (
     approved    boolean,
     rating      double precision,

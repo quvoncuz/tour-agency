@@ -12,8 +12,8 @@ import quvoncuz.entities.ProfileEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.PaymentStatus;
 import quvoncuz.enums.Role;
-import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
+import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.PaymentMapper;
 import quvoncuz.repository.PaymentRepository;
 import quvoncuz.repository.ProfileRepository;
@@ -23,7 +23,7 @@ import quvoncuz.service.PaymentService;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
@@ -45,14 +45,15 @@ public class PaymentServiceImpl implements PaymentService {
     // ADMIN
     @Override
     public List<PaymentShortInfo> findAll(Long userId, int page, int size) {
-        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found!"));
+        ProfileEntity profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found!"));
         if (profile.getRole() != Role.ADMIN) {
-            throw new DoNotMatchException("Only admins can access all payments");
+            throw new PermissionDeniedException("You don't have permission");
         }
 
         List<PaymentEntity> pageResult = paymentRepository.findAll(page - 1, size);
 
-        logger.info("Admin requested all payments with pagination - page: {}, size: {}", page, size);
+        logger.info("Admin requested all payment");
         return pageResult
                 .stream()
                 .map(PaymentMapper::toShortInfo)
@@ -63,7 +64,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public List<PaymentShortInfo> findAllByUserId(Long userId, int page, int size) {
 
-        logger.info("User with ID: {} requested their payment history with pagination - page: {}, size: {}", userId, page, size);
+        logger.info("User with ID: {} requested their payment history", userId);
         return paymentRepository.findAllByUserId(userId, page - 1, size)
                 .stream()
                 .map(PaymentMapper::toShortInfo)
@@ -78,9 +79,9 @@ public class PaymentServiceImpl implements PaymentService {
         TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
         AgencyEntity agency = tour.getAgency();
         if (!agency.getOwnerId().equals(userId) && admin.getRole() != Role.ADMIN) {
-            throw new DoNotMatchException("You don't have permission");
+            throw new PermissionDeniedException("You don't have permission");
         }
-        logger.info("User with ID: {} requested payment history for tour ID: {} with pagination - page: {}, size: {}", userId, tourId, page, size);
+        logger.info("User with ID: {} requested payment history for tour ID: {} ", userId, tourId);
         return paymentRepository.findAllByTourId(tourId, page - 1, size)
                 .stream()
                 .map(PaymentMapper::toShortInfo)

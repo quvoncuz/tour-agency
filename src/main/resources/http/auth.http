@@ -38,7 +38,7 @@ Content-Type: application/json
 
 {
   "username": "admin",
-  "password": "Admin123"
+  "password": "123"
 }
 
 > {% client.global.set("userId", response.body.id); %}

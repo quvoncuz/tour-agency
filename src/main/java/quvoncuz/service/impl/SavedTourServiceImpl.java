@@ -14,7 +14,6 @@ import quvoncuz.service.SavedTourService;
 import java.util.List;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class SavedTourServiceImpl implements SavedTourService {
 
@@ -22,6 +21,7 @@ public class SavedTourServiceImpl implements SavedTourService {
     private final TourRepository tourRepository;
 
     @Override
+    @Transactional
     public Boolean saveTour(SaveTourRequestDTO dto, Long userId) {
         if (savedTourRepository.existsByTourIdAndUserId(dto.getTourId(), userId)) {
             return savedTourRepository.deleteByTourIdAndUserId(dto.getTourId(), userId);
@@ -34,6 +34,7 @@ public class SavedTourServiceImpl implements SavedTourService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
         List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserId(userId)
                 .stream()

@@ -1,5 +1,5 @@
 ### save tour
-POST localhost:8080/api/v1/saved-tour
+POST localhost:8080/api/v1/saved-tours
 Content-Type: application/json
 X-User-Id: {{userId}}
 
@@ -8,5 +8,5 @@ X-User-Id: {{userId}}
 }
 
 ### get saved tour by user
-GET localhost:8080/api/v1/saved-tour
+GET localhost:8080/api/v1/saved-tours
 X-User-Id: {{userId}}

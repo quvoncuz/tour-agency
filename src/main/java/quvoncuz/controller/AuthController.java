@@ -1,5 +1,6 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -12,19 +13,21 @@ import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.service.AuthService;
 
 @Controller
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegistrationRequestDTO dto) {
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegistrationRequestDTO dto) {
         return ResponseEntity.ok(authService.register(dto));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequestDTO dto) {
         return ResponseEntity.ok(authService.login(dto));
     }
 }

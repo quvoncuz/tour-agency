@@ -1,5 +1,6 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -11,22 +12,22 @@ import quvoncuz.service.SavedTourService;
 import java.util.List;
 
 @Controller
-@RequestMapping("/api/v1/saved-tour")
+@RequestMapping("/saved-tours")
 @RequiredArgsConstructor
 public class SavedTourController {
 
     private final SavedTourService savedTourService;
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<Boolean> saveTour(
-            @RequestBody SaveTourRequestDTO dto,
-            @RequestHeader("X-User-Id") Long userId) {
+            @Valid @RequestBody SaveTourRequestDTO dto,
+            @RequestHeader("X-User-Id") long userId) {
         return ResponseEntity.ok(savedTourService.saveTour(dto, userId));
     }
 
-    @GetMapping("")
+    @GetMapping
     public ResponseEntity<List<TourShortInfo>> getAllSavedTours(
-            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(savedTourService.getAllSavedTours(userId, page, size));

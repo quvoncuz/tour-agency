@@ -7,7 +7,7 @@ import quvoncuz.enums.AgencyStatus;
 import java.util.List;
 
 @Entity
-@Table(name = "agency")
+@Table(name = "agencies")
 @Getter
 @Setter
 @Builder

@@ -1,5 +1,6 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -15,42 +16,47 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/rating")
+@RequestMapping("/ratings")
 public class RatingController {
 
     private final RatingService ratingService;
 
-    @PostMapping("/create")
-    public ResponseEntity<RatingFullInfo> create(@RequestBody RatingRequestDTO dto,
-                                                 @RequestHeader(value = "X-User-Id") Long userId) {
+    @PostMapping
+    public ResponseEntity<RatingFullInfo> create(
+            @Valid @RequestBody RatingRequestDTO dto,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(ratingService.create(dto, userId));
     }
 
     @PutMapping("/{ratingId}")
-    public ResponseEntity<RatingFullInfo> update(@PathVariable Long ratingId,
-                                                 @RequestBody UpdateRatingRequestDTO dto,
-                                                 @RequestHeader(value = "X-User-Id") Long userId) {
+    public ResponseEntity<RatingFullInfo> update(
+            @PathVariable long ratingId,
+            @Valid @RequestBody UpdateRatingRequestDTO dto,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(ratingService.update(ratingId, dto, userId));
     }
 
     @DeleteMapping("/{ratingId}")
-    public ResponseEntity<Boolean> delete(@PathVariable Long ratingId,
-                                          @RequestHeader(value = "X-User-Id") Long userId) {
+    public ResponseEntity<Boolean> delete(
+            @PathVariable long ratingId,
+            @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(ratingService.delete(ratingId, userId));
     }
 
     @GetMapping("/{sourceId}")
-    public ResponseEntity<List<RatingShortInfo>> findBySourceIdAndType(@PathVariable Long sourceId,
-                                                                       @RequestParam(defaultValue = "AGENCY") RatingType type,
-                                                                       @RequestParam(defaultValue = "1") int page,
-                                                                       @RequestParam(defaultValue = "1") int size) {
+    public ResponseEntity<List<RatingShortInfo>> findBySourceIdAndType(
+            @PathVariable long sourceId,
+            @RequestParam(defaultValue = "AGENCY") RatingType type,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "1") int size) {
         return ResponseEntity.ok(ratingService.findBySourceIdAndType(sourceId, type, page, size));
     }
 
-    @GetMapping("/")
-    public ResponseEntity<List<RatingShortInfo>> findByUserId(@RequestParam Long userId,
-                                                              @RequestParam(defaultValue = "1") int page,
-                                                              @RequestParam(defaultValue = "20") int size) {
+    @GetMapping("/all")
+    public ResponseEntity<List<RatingShortInfo>> findByUserId(
+            @RequestParam long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ratingService.findByUserId(userId, page, size));
     }
 }

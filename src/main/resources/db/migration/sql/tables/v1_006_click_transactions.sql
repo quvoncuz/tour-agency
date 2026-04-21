@@ -8,10 +8,10 @@ create table click_transactions
     amount            bigint       not null,
     click_paydoc_id   bigint,
     click_trans_id    bigint,
-    created_at        timestamp(6),
+    created_at        timestamp,
     merchant_trans_id varchar(255) not null,
     sign_string       text,
-    sign_time         timestamp(6),
+    sign_time         timestamp,
     status            varchar(255) not null
         constraint click_transactions_status_check
             check ((status)::text = ANY
