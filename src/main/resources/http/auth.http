@@ -3,9 +3,9 @@ POST localhost:8080/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "fullName": "quvonch",
-  "username": "quvonch",
-  "email": "quvonch@hbfav.uz",
+  "fullName": "quvonc",
+  "username": "quvonc",
+  "email": "quvonc@hbfav.uz",
   "password": "123",
   "gender": "MALE"
 }

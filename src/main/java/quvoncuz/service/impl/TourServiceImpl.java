@@ -117,7 +117,7 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional(readOnly = true)
     public List<TourShortInfo> getAllTour(int page, int size) {
-        return tourRepository.findAll(page, size)
+        return tourRepository.findAll(page - 1, size)
                 .stream()
                 .map(TourMapper::toShortInfo)
                 .toList();
@@ -126,7 +126,7 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional(readOnly = true)
     public List<TourShortInfo> getAllActiveTour(int page, int size) {
-        return tourRepository.findAll(page, size)
+        return tourRepository.findAll(page - 1, size)
                 .stream()
                 .map(TourMapper::toShortInfo)
                 .toList();

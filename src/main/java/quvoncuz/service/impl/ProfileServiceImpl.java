@@ -1,8 +1,10 @@
 package quvoncuz.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
@@ -39,6 +41,8 @@ public class ProfileServiceImpl implements ProfileService {
     //    @Value("${admin.default.password}")
     private final String adminPassword = "Admin123";
 
+//    @PostConstruct
+    @Transactional(readOnly = true)
     public void initDefaultAdmin() {
         if (!existsByUsername(adminUsername)) {
             ProfileEntity admin = ProfileEntity.builder()
@@ -137,7 +141,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new PermissionDeniedException("You don't have permission");
         }
 
-        List<ProfileEntity> allProfile = profileRepository.findAll(page, size);
+        List<ProfileEntity> allProfile = profileRepository.findAll(page - 1, size);
         logger.info("Retrieved all profiles for admin with id: {}", adminId);
         return allProfile
                 .stream()
