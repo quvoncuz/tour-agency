@@ -11,10 +11,10 @@ create table bookings
     total_price  bigint,
     tour_id      bigint
         constraint foreign_key_tour_for_booking
-            references tour,
+            references tours,
     user_id      bigint
         constraint foreign_key_profile_for_booking
-            references profile,
+            references profiles,
     note         varchar(255),
     status       varchar(255)
         constraint booking_status_check

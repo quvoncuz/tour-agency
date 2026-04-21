@@ -10,7 +10,7 @@ create table ratings
     source_id  bigint,
     user_id    bigint
         constraint foreign_key_profile_rating
-            references profile,
+            references profiles,
     comment    varchar(255),
     type       varchar(255)
         constraint rating_type_check

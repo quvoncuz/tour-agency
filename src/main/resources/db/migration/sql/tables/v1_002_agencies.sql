@@ -9,7 +9,7 @@ create table agencies
         primary key,
     owner_id    bigint
         constraint foreign_key_profile_for_agency
-            references profile,
+            references profiles,
     address     varchar(255),
     city        varchar(255),
     description varchar(255),

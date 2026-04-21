@@ -8,8 +8,8 @@ create table saved_tours
         primary key,
     tour_id    bigint
         constraint foreign_key_tour_for_saved_tour
-            references tour,
+            references tours,
     user_id    bigint
         constraint foreign_key_profile_for_saved_tour
-            references profile
+            references profiles
 );

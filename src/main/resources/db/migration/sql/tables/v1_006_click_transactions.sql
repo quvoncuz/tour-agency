@@ -18,10 +18,10 @@ create table click_transactions
         ((ARRAY ['CREATED'::character varying, 'PREPARED'::character varying, 'PAID'::character varying, 'CANCELLED'::character varying, 'REFUND'::character varying])::text[])),
     user_id           bigint       not null
         constraint foreign_key_profile
-            references profile,
+            references profiles,
     payment_id        bigint
         constraint unique_payment_id_for_click
             unique
         constraint foreign_key_payment_for_click
-            references payment
+            references payments
 );
