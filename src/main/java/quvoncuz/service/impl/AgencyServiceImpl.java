@@ -3,6 +3,8 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.agency.*;
@@ -19,7 +21,6 @@ import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.AgencyService;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -87,7 +88,7 @@ public class AgencyServiceImpl implements AgencyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size) {
+    public Page<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size) {
         ProfileEntity profile = profileRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.ADMIN)) {
@@ -96,21 +97,20 @@ public class AgencyServiceImpl implements AgencyService {
 
         logger.info("Admin with id {} requested pending agencies", userId);
 
-        List<AgencyEntity> pageResult = agencyRepository.findAll(page - 1, size);
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        Page<AgencyEntity> pageResult = agencyRepository.findAll(pageRequest);
         return pageResult
-                .stream()
-                .map(AgencyMapper::toShortInfo)
-                .toList();
+                .map(AgencyMapper::toShortInfo);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AgencyFullInfo> getAllAgencies(int page, int size) {
+    public Page<AgencyFullInfo> getAllAgencies(int page, int size) {
         logger.info("Requested all agencies");
-        return agencyRepository.findAll(page - 1, size)
-                .stream()
-                .map(AgencyMapper::toFullInfo)
-                .toList();
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        return agencyRepository.findAll(pageRequest)
+                .map(AgencyMapper::toFullInfo);
     }
 
     @Override

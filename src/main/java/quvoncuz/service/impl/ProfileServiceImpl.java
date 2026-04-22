@@ -1,10 +1,10 @@
 package quvoncuz.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
@@ -12,7 +12,6 @@ import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.dto.profile.ProfileFullInfo;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.entities.ProfileEntity;
-import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -21,8 +20,6 @@ import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,37 +28,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final Logger logger = LoggerFactory.getLogger(ProfileServiceImpl.class);
     private final ProfileRepository profileRepository;
-
-    //    @Value("${admin.default.username}")
-    private final String adminUsername = "admin";
-
-    //    @Value("${admin.default.email}")
-    private final String adminEmail = "admin@admin.uz";
-
-    //    @Value("${admin.default.password}")
-    private final String adminPassword = "Admin123";
-
-//    @PostConstruct
-    @Transactional(readOnly = true)
-    public void initDefaultAdmin() {
-        if (!existsByUsername(adminUsername)) {
-            ProfileEntity admin = ProfileEntity.builder()
-                    .fullName("admin")
-                    .username(adminUsername)
-                    .email(adminEmail)
-                    .password(adminPassword)
-                    .role(Role.ADMIN)
-                    .gender(Gender.MALE)
-                    .isCreateAgency(false)
-                    .isActive(true)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            logger.info("Creating default admin with username: {}", adminUsername);
-            profileRepository.save(admin);
-        } else {
-            logger.info("Default admin already exists with username: {}", adminUsername);
-        }
-    }
 
     @Override
     @Transactional
@@ -135,18 +101,17 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
+    public Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
         ProfileEntity admin = findById(adminId);
         if (admin.getRole() != Role.ADMIN) {
             throw new PermissionDeniedException("You don't have permission");
         }
 
-        List<ProfileEntity> allProfile = profileRepository.findAll(page - 1, size);
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
         logger.info("Retrieved all profiles for admin with id: {}", adminId);
-        return allProfile
-                .stream()
-                .map(ProfileMapper::toDTO)
-                .toList();
+        return profileRepository.findAll(pageRequest)
+                .map(ProfileMapper::toDTO);
     }
 
     @Override

@@ -3,6 +3,9 @@ package quvoncuz.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.booking.*;
@@ -86,51 +89,50 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
+    public Page<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
         ProfileEntity profile = profileService.findById(loginId);
         if (profile.getRole() != Role.ADMIN && !loginId.equals(userId)) {
             throw new DoNotMatchException("You don't have permission");
         }
-        List<BookingEntity> pageResult = bookingRepository.findAll(page - 1, size);
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        Page<BookingEntity> pageResult = bookingRepository.findAll(pageRequest);
         logger.info("Finding all bookings for userId: {}", userId);
         return pageResult
-                .stream()
-                .map(BookingMapper::toShortInfo)
-                .toList();
+                .map(BookingMapper::toShortInfo);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
+    public Page<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
         logger.info("Finding all bookings for tourId: {}", tourId);
         ProfileEntity profile = profileService.findById(loginId);
-        List<BookingEntity> pageResult = bookingRepository.findAllByTourId(tourId, page - 1, size);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        Page<BookingEntity> pageResult = bookingRepository.findAllByTourId(tourId, pageRequest);
         if (profile.getRole() == Role.ADMIN) {
             return pageResult
-                    .stream()
-                    .map(BookingMapper::toShortInfo)
-                    .toList();
+                    .map(BookingMapper::toShortInfo);
         } else if (profile.getRole() == Role.AGENCY) {
             TourEntity tour = tourRepository.findById(tourId)
                     .orElseThrow(() -> new NotFoundException("Tour not found"));
             if (tour.getAgencyId().equals(loginId)) {
                 return pageResult
-                        .stream()
-                        .map(BookingMapper::toShortInfo)
-                        .toList();
+                        .map(BookingMapper::toShortInfo);
             } else throw new DoNotMatchException("You don't have permission");
         } else {
-            return pageResult
-                    .stream()
+            List<BookingShortInfo> list = pageResult
                     .filter(bookingEntity -> bookingEntity.getUserId().equals(loginId))
                     .map(BookingMapper::toShortInfo)
                     .toList();
+            return new PageImpl<>(list, pageRequest, list.size());
         }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
+    public Page<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
         ProfileEntity profile = profileService.findById(loginId);
         AgencyEntity agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new NotFoundException("Agency not found"));
@@ -139,20 +141,21 @@ public class BookingServiceImpl implements BookingService {
             throw new PermissionDeniedException("You don't have permission");
         }
 
-        List<Long> tourByAgencyId = tourRepository.findAllByAgencyId(agencyId)
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        List<Long> tourByAgencyId = tourRepository.findAllByAgencyId(agencyId, pageRequest)
+                .getContent()
                 .stream()
                 .map(TourEntity::getId)
                 .toList();
         logger.info("Finding all bookings for agencyId: {}", loginId);
-        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, page - 1, size)
-                .stream()
-                .map(BookingMapper::toShortInfo)
-                .toList();
+        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, pageRequest)
+                .map(BookingMapper::toShortInfo);
     }
 
     @Override
     @Transactional
-    public BookingFullInfo confirmUpdatedBooking(Long bookingId, Long userId){
+    public BookingFullInfo confirmUpdatedBooking(Long bookingId, Long userId) {
         ProfileEntity profile = profileService.findById(userId);
         BookingEntity booking = findById(bookingId);
 
@@ -168,7 +171,7 @@ public class BookingServiceImpl implements BookingService {
             throw new DoNotMatchException("User is not active");
         }
 
-        if (!booking.getUserId().equals(userId)){
+        if (!booking.getUserId().equals(userId)) {
             throw new DoNotMatchException("You don't have permission");
         }
 
@@ -187,7 +190,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingFullInfo cancelUpdateBooking(Long bookingId, Long userId){
+    public BookingFullInfo cancelUpdateBooking(Long bookingId, Long userId) {
         ProfileEntity profile = profileService.findById(userId);
         BookingEntity booking = findById(bookingId);
 
@@ -203,13 +206,13 @@ public class BookingServiceImpl implements BookingService {
             throw new DoNotMatchException("User is not active");
         }
 
-        if (!booking.getUserId().equals(userId)){
+        if (!booking.getUserId().equals(userId)) {
             throw new DoNotMatchException("You don't have permission");
         }
 
         booking.setStatus(BookingStatus.CANCELED);
 
-         paymentRepository.findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, booking.getTourId(), bookingId, PaymentStatus.PENDING)
+        paymentRepository.findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, booking.getTourId(), bookingId, PaymentStatus.PENDING)
                 .ifPresentOrElse(payment -> {
                     payment.setStatus(PaymentStatus.FAILED);
                     paymentRepository.save(payment);
@@ -337,7 +340,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<BookingFullInfo> getUpdatedBooking(long userId) {
-        return bookingRepository.findAllUpdated(userId)
+        return bookingRepository.findAllByUserIdAndStatus(userId, BookingStatus.ON_UPDATE)
                 .stream()
                 .map(BookingMapper::toFullInfo)
                 .toList();

@@ -2,6 +2,7 @@ package quvoncuz.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class ProfileController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ProfileDTO>> getAllProfiles(
+    public ResponseEntity<Page<ProfileDTO>> getAllProfiles(
             @RequestHeader(value = "X-User-Id") long adminId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {

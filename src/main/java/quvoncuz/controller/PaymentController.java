@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +21,14 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @GetMapping({"/all/refund", "/all/refund/"})
-    public ResponseEntity<List<PaymentShortInfo>> findAllByRefund(
+    public ResponseEntity<Page<PaymentShortInfo>> findAllByRefund(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(paymentService.findAllByRefund(page, size));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<PaymentShortInfo>> findAll(
+    public ResponseEntity<Page<PaymentShortInfo>> findAll(
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -35,7 +36,7 @@ public class PaymentController {
     }
 
     @GetMapping("/by-user")
-    public ResponseEntity<List<PaymentShortInfo>> findAllByUserId(
+    public ResponseEntity<Page<PaymentShortInfo>> findAllByUserId(
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -43,7 +44,7 @@ public class PaymentController {
     }
 
     @GetMapping("/by-tour")
-    public ResponseEntity<List<PaymentShortInfo>> findAllByTourId(
+    public ResponseEntity<Page<PaymentShortInfo>> findAllByTourId(
             @RequestParam long tourId,
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,

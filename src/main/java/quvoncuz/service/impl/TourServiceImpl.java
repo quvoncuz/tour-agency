@@ -1,6 +1,8 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
@@ -84,7 +86,7 @@ public class TourServiceImpl implements TourService {
             throw new PermissionDeniedException("You don't have permission");
         }
         TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
-        if(!tour.getAgency().getOwner().getId().equals(userId)) {
+        if (!tour.getAgency().getOwner().getId().equals(userId)) {
             throw new PermissionDeniedException("You don't have permission");
         }
         Long old = tour.getPrice();
@@ -116,20 +118,20 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TourShortInfo> getAllTour(int page, int size) {
-        return tourRepository.findAll(page - 1, size)
-                .stream()
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> getAllTour(int page, int size) {
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        return tourRepository.findAll(pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TourShortInfo> getAllActiveTour(int page, int size) {
-        return tourRepository.findAll(page - 1, size)
-                .stream()
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> getAllActiveTour(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+        return tourRepository.findAll(pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Override
@@ -143,24 +145,25 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
-        List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserId(userId)
+    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(SavedTourEntity::getTourId)
                 .toList();
-        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, page - 1, size)
-                .stream()
-                .map(TourMapper::toShortInfo)
-                .toList();
+
+        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<TourShortInfo> search(String query, int page, int size) {
-        return tourRepository.findAllByQuery("%" + query + "%", page - 1, size)
-                .stream()
-                .map(TourMapper::toShortInfo)
-                .toList();
+    public Page<TourShortInfo> search(String query, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        return tourRepository.findAllByQuery("%" + query + "%", pageRequest)
+                .map(TourMapper::toShortInfo);
     }
 
     @Transactional

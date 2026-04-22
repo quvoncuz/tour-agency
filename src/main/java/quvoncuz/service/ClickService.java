@@ -111,7 +111,7 @@ public class ClickService {
         ClickTransactionEntity transaction = new ClickTransactionEntity();
 
 
-        Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransId(request.getMerchantTransId());
+        Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransIdOrderByCreatedAtDesc(request.getMerchantTransId());
         if (optionalTransaction.isPresent()) {
             transaction = optionalTransaction.get();
             if (transaction.getStatus() == ClickTransactionStatus.PAID) {

@@ -1,5 +1,6 @@
 package quvoncuz.service;
 
+import org.springframework.data.domain.Page;
 import quvoncuz.dto.booking.*;
 
 import java.util.List;
@@ -8,11 +9,11 @@ public interface BookingService {
 
     BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId);
 
-    List<BookingShortInfo> findAllByUserId(Long adminId, Long userId, int page, int size);
+    Page<BookingShortInfo> findAllByUserId(Long adminId, Long userId, int page, int size);
 
-    List<BookingShortInfo> findAllByTourId(Long userId, Long adminId, int page, int size);
+    Page<BookingShortInfo> findAllByTourId(Long userId, Long adminId, int page, int size);
 
-    List<BookingShortInfo> findAllByAgencyId(Long userId, Long adminId, int page, int size);
+    Page<BookingShortInfo> findAllByAgencyId(Long userId, Long adminId, int page, int size);
 
     BookingFullInfo confirmUpdatedBooking(Long bookingId, Long userId);
 

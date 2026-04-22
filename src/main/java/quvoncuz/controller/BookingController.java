@@ -2,6 +2,7 @@ package quvoncuz.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -63,7 +64,7 @@ public class BookingController {
     }
 
     @GetMapping({"/by-user", "/by-user/{userId}"})
-    public ResponseEntity<List<BookingShortInfo>> findAllByUserId(
+    public ResponseEntity<Page<BookingShortInfo>> findAllByUserId(
             @PathVariable(required = false) long userId,
             @RequestHeader(value = "X-User-Id") long loginId,
             @RequestParam(defaultValue = "1") int page,
@@ -72,7 +73,7 @@ public class BookingController {
     }
 
     @GetMapping("/by-tour/{tourId}")
-    public ResponseEntity<List<BookingShortInfo>> findAllByTourId(
+    public ResponseEntity<Page<BookingShortInfo>> findAllByTourId(
             @PathVariable long tourId,
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
@@ -81,7 +82,7 @@ public class BookingController {
     }
 
     @GetMapping("/by-agency/{agencyId}")
-    public ResponseEntity<List<BookingShortInfo>> findAllByAgencyId(
+    public ResponseEntity<Page<BookingShortInfo>> findAllByAgencyId(
             @PathVariable long agencyId,
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,

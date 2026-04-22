@@ -1,9 +1,9 @@
 package quvoncuz.service;
 
+import org.springframework.data.domain.Page;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface AgencyService {
@@ -11,9 +11,9 @@ public interface AgencyService {
 
     Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId);
 
-    List<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size);
+    Page<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size);
 
-    List<AgencyFullInfo> getAllAgencies(int page, int size);
+    Page<AgencyFullInfo> getAllAgencies(int page, int size);
 
     AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId);
 

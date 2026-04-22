@@ -6,8 +6,8 @@ import quvoncuz.dto.auth.RegistrationRequestDTO;
 
 
 public interface AuthService {
-    public AuthResponse register(RegistrationRequestDTO dto);
+    AuthResponse register(RegistrationRequestDTO dto);
 
-    public AuthResponse login(LoginRequestDTO dto);
+    AuthResponse login(LoginRequestDTO dto);
 //    public Boolean verification(VerificationRequestDTO dto);
 }

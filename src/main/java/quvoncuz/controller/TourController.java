@@ -2,6 +2,7 @@ package quvoncuz.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -10,8 +11,6 @@ import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
 import quvoncuz.service.TourService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/tours")
@@ -50,7 +49,7 @@ public class TourController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<TourShortInfo>> getAllTour(
+    public ResponseEntity<Page<TourShortInfo>> getAllTour(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.getAllTour(page, size));
@@ -58,7 +57,7 @@ public class TourController {
 
 
     @GetMapping("/all-active")
-    public ResponseEntity<List<TourShortInfo>> getAllActiveTour(
+    public ResponseEntity<Page<TourShortInfo>> getAllActiveTour(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(tourService.getAllActiveTour(page, size));
@@ -71,7 +70,7 @@ public class TourController {
     }
 
     @GetMapping("/saved")
-    public ResponseEntity<List<TourShortInfo>> getSavedTourId(
+    public ResponseEntity<Page<TourShortInfo>> getSavedTourId(
             @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -79,7 +78,7 @@ public class TourController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TourShortInfo>> search(
+    public ResponseEntity<Page<TourShortInfo>> search(
             @RequestParam String query,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {

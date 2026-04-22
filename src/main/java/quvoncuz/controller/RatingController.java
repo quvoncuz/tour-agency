@@ -2,6 +2,7 @@ package quvoncuz.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +45,7 @@ public class RatingController {
     }
 
     @GetMapping("/{sourceId}")
-    public ResponseEntity<List<RatingShortInfo>> findBySourceIdAndType(
+    public ResponseEntity<Page<RatingShortInfo>> findBySourceIdAndType(
             @PathVariable long sourceId,
             @RequestParam(defaultValue = "AGENCY") RatingType type,
             @RequestParam(defaultValue = "1") int page,
@@ -53,7 +54,7 @@ public class RatingController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<RatingShortInfo>> findByUserId(
+    public ResponseEntity<Page<RatingShortInfo>> findByUserId(
             @RequestParam long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
