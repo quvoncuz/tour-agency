@@ -4,14 +4,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.booking.*;
 import quvoncuz.service.BookingService;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
 public class BookingController {
@@ -50,9 +49,10 @@ public class BookingController {
                                                                  @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(bookingService.confirmUpdatedBooking(bookingId, userId));
     }
+
     @PostMapping("/{bookingId}/cancel")
     public ResponseEntity<BookingFullInfo> cancelUpdateBooking(@PathVariable long bookingId,
-                                                                 @RequestHeader(value = "X-User-Id") long userId) {
+                                                               @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(bookingService.cancelUpdateBooking(bookingId, userId));
     }
 

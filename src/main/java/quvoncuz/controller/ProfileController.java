@@ -4,16 +4,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.profile.ProfileDTO;
 import quvoncuz.dto.profile.ProfileFullInfo;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.service.ProfileService;
 
-import java.util.List;
-
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/profiles")
 public class ProfileController {
@@ -37,7 +34,7 @@ public class ProfileController {
     @PutMapping("/{profileId}")
     public ResponseEntity<ProfileFullInfo> update(@Valid @RequestBody UpdateProfileRequestDTO dto,
                                                   @PathVariable long profileId,
-                                                  @RequestHeader(value = "X-User-Id") long userId){
+                                                  @RequestHeader(value = "X-User-Id") long userId) {
         return ResponseEntity.ok(profileService.updateProfile(dto, profileId, userId));
     }
 

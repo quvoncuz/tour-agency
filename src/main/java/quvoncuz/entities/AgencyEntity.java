@@ -27,10 +27,10 @@ public class AgencyEntity {
     @Column
     private String name;
 
-    @Column
+    @Column(unique = true)
     private String phone;
 
-    @Column
+    @Column(unique = true)
     private String email;
 
     @Column

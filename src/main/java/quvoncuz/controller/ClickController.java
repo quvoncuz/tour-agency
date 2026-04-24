@@ -3,7 +3,6 @@ package quvoncuz.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.click.ClickResponse;
 import quvoncuz.dto.click.CompleteRequest;
@@ -12,7 +11,7 @@ import quvoncuz.dto.payment.PaymentRequestDTO;
 import quvoncuz.dto.payment.PaymentResponse;
 import quvoncuz.service.ClickService;
 
-@Controller
+@RestController
 @RequestMapping("/click")
 @RequiredArgsConstructor
 public class ClickController {

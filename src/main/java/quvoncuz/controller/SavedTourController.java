@@ -4,15 +4,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.tour.SaveTourRequestDTO;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.service.SavedTourService;
 
-import java.util.List;
-
-@Controller
+@RestController
 @RequestMapping("/saved-tours")
 @RequiredArgsConstructor
 public class SavedTourController {
