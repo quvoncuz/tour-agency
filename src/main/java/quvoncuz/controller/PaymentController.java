@@ -23,26 +23,23 @@ public class PaymentController {
 
     @GetMapping("/all")
     public ResponseEntity<Page<PaymentShortInfo>> findAll(
-            @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(paymentService.findAll(userId, page, size));
+        return ResponseEntity.ok(paymentService.findAll(page, size));
     }
 
     @GetMapping("/by-user")
     public ResponseEntity<Page<PaymentShortInfo>> findAllByUserId(
-            @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(paymentService.findAllByUserId(userId, page, size));
+        return ResponseEntity.ok(paymentService.findAllByUserId(page, size));
     }
 
     @GetMapping("/by-tour")
     public ResponseEntity<Page<PaymentShortInfo>> findAllByTourId(
             @RequestParam long tourId,
-            @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(paymentService.findAllByTourId(tourId, userId, page, size));
+        return ResponseEntity.ok(paymentService.findAllByTourId(tourId, page, size));
     }
 }

@@ -22,6 +22,7 @@ import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
 import quvoncuz.repository.PaymentRepository;
 import quvoncuz.util.ClickSignUtil;
+import quvoncuz.util.SecurityUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -51,7 +52,8 @@ public class ClickService {
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
 
-    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request, Long userId) {
+    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request) {
+        Long userId = SecurityUtil.getCurrentUserId();
         PaymentEntity payment = paymentRepository
                 .findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, request.getTourId(), request.getBookingId(), PaymentStatus.PENDING)
                 .orElseThrow(() -> new NotFoundException("Payment not found"));

@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface ProfileService {
     ProfileEntity create(RegistrationRequestDTO dto);
 
-    ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId, Long loginId);
+    ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId);
 
     Optional<ProfileEntity> findByUsername(String username);
 
@@ -21,11 +21,11 @@ public interface ProfileService {
 
     boolean existsByEmail(String email);
 
-    Boolean deleteById(Long id, Long adminId);
+    Boolean deleteById(Long id);
 
-    ProfileDTO getProfileById(Long id, Long adminId);
+    ProfileDTO getProfileById(Long id);
 
-    Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size);
+    Page<ProfileDTO> getAllProfiles(int page, int size);
 
     void updateRole(Role role, long userId);
 

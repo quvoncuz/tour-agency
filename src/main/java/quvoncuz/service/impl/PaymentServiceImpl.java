@@ -1,6 +1,7 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -21,13 +22,14 @@ import quvoncuz.repository.PaymentRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.PaymentService;
+import quvoncuz.util.SecurityUtil;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
-    private final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final ProfileRepository profileRepository;
     private final TourRepository tourRepository;
@@ -42,27 +44,23 @@ public class PaymentServiceImpl implements PaymentService {
 
     // ADMIN
     @Override
-    public Page<PaymentShortInfo> findAll(Long userId, int page, int size) {
-        ProfileEntity profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found!"));
-        if (profile.getRole() != Role.ADMIN) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
-
+    public Page<PaymentShortInfo> findAll(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
         Page<PaymentEntity> pageResult = paymentRepository.findAll(pageRequest);
 
-        logger.info("Admin requested all payment");
+        log.info("Admin requested all payment");
         return pageResult
                 .map(PaymentMapper::toShortInfo);
     }
 
     // ADMIN and USER himself
     @Override
-    public Page<PaymentShortInfo> findAllByUserId(Long userId, int page, int size) {
+    public Page<PaymentShortInfo> findAllByUserId(int page, int size) {
 
-        logger.info("User with ID: {} requested their payment history", userId);
+        long userId = SecurityUtil.getCurrentUserId();
+
+        log.info("User with ID: {} requested their payment history", userId);
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
@@ -72,7 +70,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     //ADMIN and AGENCY
     @Override
-    public Page<PaymentShortInfo> findAllByTourId(Long tourId, Long userId, int page, int size) {
+    public Page<PaymentShortInfo> findAllByTourId(Long tourId, int page, int size) {
+        long userId = SecurityUtil.getCurrentUserId();
+
         ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
 
         TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
@@ -80,7 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (!agency.getOwnerId().equals(userId) && admin.getRole() != Role.ADMIN) {
             throw new PermissionDeniedException("You don't have permission");
         }
-        logger.info("User with ID: {} requested payment history for tour ID: {} ", userId, tourId);
+        log.info("User with ID: {} requested payment history for tour ID: {} ", userId, tourId);
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 

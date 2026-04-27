@@ -12,6 +12,7 @@ import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.SavedTourService;
+import quvoncuz.util.SecurityUtil;
 
 import java.util.List;
 
@@ -24,7 +25,8 @@ public class SavedTourServiceImpl implements SavedTourService {
 
     @Override
     @Transactional
-    public Boolean saveTour(SaveTourRequestDTO dto, Long userId) {
+    public Boolean saveTour(SaveTourRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         if (savedTourRepository.existsByTourIdAndUserId(dto.getTourId(), userId)) {
             return savedTourRepository.deleteByTourIdAndUserId(dto.getTourId(), userId);
         }
@@ -37,8 +39,10 @@ public class SavedTourServiceImpl implements SavedTourService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
-        List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+    public Page<TourShortInfo> getAllSavedTours(int page, int size) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        List<Long> allSavedTourIdByUserId = savedTourRepository
+                .findAllByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(SavedTourEntity::getTourId)
                 .toList();

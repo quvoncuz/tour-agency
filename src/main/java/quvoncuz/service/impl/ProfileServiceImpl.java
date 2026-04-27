@@ -19,6 +19,7 @@ import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
+import quvoncuz.util.SecurityUtil;
 
 import java.util.Optional;
 
@@ -43,13 +44,13 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional
-    public ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId, Long loginId) {
-
-        if (profileId.equals(loginId)) {
+    public ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        if (profileId.equals(userId)) {
             throw new DoNotMatchException("You can update yourself only");
         }
 
-        ProfileEntity profile = profileRepository.findById(loginId).orElseThrow(() -> new NotFoundException("Profile not found"));
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("Profile not found"));
         profile.setFullName(dto.getFullName());
         profile.setUsername(dto.getUsername());
         profile.setEmail(dto.getEmail());
@@ -79,37 +80,30 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional
-    public Boolean deleteById(Long id, Long adminId) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
+    public Boolean deleteById(Long id) {
         profileRepository.deleteById(id);
         return true;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ProfileDTO getProfileById(Long id, Long adminId) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
+    public ProfileDTO getProfileById(Long id) {
+        Long loginId = SecurityUtil.getCurrentUserId();
+        ProfileEntity login = findById(loginId);
+        if (login.getRole() != Role.ADMIN && !login.getId().equals(id)) {
             throw new PermissionDeniedException("You don't have permission");
         }
-        logger.info("Retrieved profile with id: {} for admin with id: {}", id, adminId);
+        logger.info("Retrieved profile with id: {}", id);
         return ProfileMapper.toDTO(findById(id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
+    public Page<ProfileDTO> getAllProfiles(int page, int size) {
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        logger.info("Retrieved all profiles for admin with id: {}", adminId);
+        logger.info("Retrieved all profiles for admin");
         return profileRepository.findAll(pageRequest)
                 .map(ProfileMapper::toDTO);
     }

@@ -17,24 +17,21 @@ public class AgencyController {
 
     @PostMapping
     public ResponseEntity<AgencyDTO> applyForAgency(
-            @Valid @RequestBody CreateAgencyRequestDTO dto,
-            @RequestHeader("X-User-Id") long userId) {
-        return ResponseEntity.ok(agencyService.applyForAgency(dto, userId));
+            @Valid @RequestBody CreateAgencyRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.applyForAgency(dto));
     }
 
     @PostMapping("/approve")
     public ResponseEntity<Boolean> approveAgency(
-            @Valid @RequestBody AgencyApproveRequestDTO dto,
-            @RequestHeader("X-User-Id") long userId) {
-        return ResponseEntity.ok(agencyService.approveAgency(dto, userId));
+            @Valid @RequestBody AgencyApproveRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.approveAgency(dto));
     }
 
     @GetMapping("/pending")
     public ResponseEntity<Page<AgencyShortInfo>> getPendingAgencies(
-            @RequestHeader("X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(agencyService.getPendingAgencies(userId, page, size));
+        return ResponseEntity.ok(agencyService.getPendingAgencies(page, size));
     }
 
     @GetMapping("/all")
@@ -46,16 +43,14 @@ public class AgencyController {
     @PutMapping("/{agencyId}")
     public ResponseEntity<AgencyFullInfo> update(
             @PathVariable long agencyId,
-            @Valid @RequestBody UpdateAgencyRequestDTO dto,
-            @RequestHeader("X-User-Id") long userId) {
-        return ResponseEntity.ok(agencyService.update(agencyId, dto, userId));
+            @Valid @RequestBody UpdateAgencyRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.update(agencyId, dto));
     }
 
     @DeleteMapping("/{agencyId}")
     public ResponseEntity<Boolean> deleteById(
-            @PathVariable long agencyId,
-            @RequestHeader("X-User-Id") long userId) {
-        return ResponseEntity.ok(agencyService.deleteById(agencyId, userId));
+            @PathVariable long agencyId) {
+        return ResponseEntity.ok(agencyService.deleteById(agencyId));
     }
 
     @GetMapping("/{agencyId}")

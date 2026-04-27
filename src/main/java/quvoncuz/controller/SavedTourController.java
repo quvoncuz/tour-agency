@@ -18,16 +18,14 @@ public class SavedTourController {
 
     @PostMapping
     public ResponseEntity<Boolean> saveTour(
-            @Valid @RequestBody SaveTourRequestDTO dto,
-            @RequestHeader("X-User-Id") long userId) {
-        return ResponseEntity.ok(savedTourService.saveTour(dto, userId));
+            @Valid @RequestBody SaveTourRequestDTO dto) {
+        return ResponseEntity.ok(savedTourService.saveTour(dto));
     }
 
     @GetMapping
     public ResponseEntity<Page<TourShortInfo>> getAllSavedTours(
-            @RequestHeader("X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(savedTourService.getAllSavedTours(userId, page, size));
+        return ResponseEntity.ok(savedTourService.getAllSavedTours(page, size));
     }
 }

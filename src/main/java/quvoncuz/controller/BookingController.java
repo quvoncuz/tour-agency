@@ -19,24 +19,21 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingFullInfo> createBooking(
-            @Valid @RequestBody CreateBookingRequestDTO dto,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.createBooking(dto, userId));
+            @Valid @RequestBody CreateBookingRequestDTO dto) {
+        return ResponseEntity.ok(bookingService.createBooking(dto));
     }
 
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Boolean> cancelBooking(
-            @Valid @RequestBody CancelBookingRequestDTO dto,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.cancelBooking(dto, userId));
+            @Valid @RequestBody CancelBookingRequestDTO dto) {
+        return ResponseEntity.ok(bookingService.cancelBooking(dto));
     }
 
     @PutMapping("/{bookingId}")
     public ResponseEntity<BookingFullInfo> updateBookingSeats(
             @PathVariable long bookingId,
-            @Valid @RequestBody UpdateBookingRequestDTO dto,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.updateBookingSeats(bookingId, dto, userId));
+            @Valid @RequestBody UpdateBookingRequestDTO dto) {
+        return ResponseEntity.ok(bookingService.updateBookingSeats(bookingId, dto));
     }
 
     @GetMapping("/updated")
@@ -58,35 +55,31 @@ public class BookingController {
 
     @GetMapping("{bookingId}")
     public ResponseEntity<BookingFullInfo> findById(
-            @PathVariable long bookingId,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.findById(bookingId, userId));
+            @PathVariable long bookingId) {
+        return ResponseEntity.ok(bookingService.findById(bookingId));
     }
 
     @GetMapping({"/by-user", "/by-user/{userId}"})
     public ResponseEntity<Page<BookingShortInfo>> findAllByUserId(
             @PathVariable(required = false) long userId,
-            @RequestHeader(value = "X-User-Id") long loginId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(bookingService.findAllByUserId(userId, loginId, page, size));
+        return ResponseEntity.ok(bookingService.findAllByUserId(userId, page, size));
     }
 
     @GetMapping("/by-tour/{tourId}")
     public ResponseEntity<Page<BookingShortInfo>> findAllByTourId(
             @PathVariable long tourId,
-            @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(bookingService.findAllByTourId(tourId, userId, page, size));
+        return ResponseEntity.ok(bookingService.findAllByTourId(tourId, page, size));
     }
 
     @GetMapping("/by-agency/{agencyId}")
     public ResponseEntity<Page<BookingShortInfo>> findAllByAgencyId(
             @PathVariable long agencyId,
-            @RequestHeader(value = "X-User-Id") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(bookingService.findAllByAgencyId(agencyId, userId, page, size));
+        return ResponseEntity.ok(bookingService.findAllByAgencyId(agencyId, page, size));
     }
 }

@@ -20,6 +20,7 @@ import quvoncuz.mapper.AgencyMapper;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.AgencyService;
+import quvoncuz.util.SecurityUtil;
 
 import java.util.Optional;
 
@@ -33,7 +34,8 @@ public class AgencyServiceImpl implements AgencyService {
 
     @Override
     @Transactional
-    public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId) {
+    public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.USER)) {
             throw new PermissionDeniedException("You have a agency already");
@@ -61,12 +63,7 @@ public class AgencyServiceImpl implements AgencyService {
 
     @Override
     @Transactional
-    public Boolean approveAgency(AgencyApproveRequestDTO dto, Long userId) {
-        ProfileEntity admin = profileRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        if (!admin.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
+    public Boolean approveAgency(AgencyApproveRequestDTO dto) {
 
         AgencyEntity agency = findById(dto.getAgencyId());
 
@@ -82,20 +79,14 @@ public class AgencyServiceImpl implements AgencyService {
             agency.setStatus(AgencyStatus.REJECTED);
         }
         agencyRepository.save(agency);
-        logger.info("User with id {} {} agency with id {}", userId, dto.getApprove() ? "approved" : "rejected", agency.getId());
+        logger.info("Agency with id {}", dto.getApprove() ? "approved" : "rejected");
         return true;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AgencyShortInfo> getPendingAgencies(Long userId, int page, int size) {
-        ProfileEntity profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        if (!profile.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
-
-        logger.info("Admin with id {} requested pending agencies", userId);
+    public Page<AgencyShortInfo> getPendingAgencies(int page, int size) {
+        logger.info("Admin requested pending agencies");
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
@@ -115,7 +106,8 @@ public class AgencyServiceImpl implements AgencyService {
 
     @Override
     @Transactional
-    public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto, Long userId) {
+    public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         AgencyEntity agency = findById(agencyId);
 
@@ -136,11 +128,8 @@ public class AgencyServiceImpl implements AgencyService {
     }
 
     @Override
-    public Boolean deleteById(Long agencyId, Long userId) {
-        ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
-        if (!admin.getRole().equals(Role.ADMIN)) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
+    public Boolean deleteById(Long agencyId) {
+        Long userId = SecurityUtil.getCurrentUserId();
         logger.info("Admin with id {} deleted agency with id {}", userId, agencyId);
         agencyRepository.deleteById(agencyId);
         return true;

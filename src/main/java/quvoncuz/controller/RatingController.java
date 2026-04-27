@@ -21,24 +21,21 @@ public class RatingController {
 
     @PostMapping
     public ResponseEntity<RatingFullInfo> create(
-            @Valid @RequestBody RatingRequestDTO dto,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(ratingService.create(dto, userId));
+            @Valid @RequestBody RatingRequestDTO dto) {
+        return ResponseEntity.ok(ratingService.create(dto));
     }
 
     @PutMapping("/{ratingId}")
     public ResponseEntity<RatingFullInfo> update(
             @PathVariable long ratingId,
-            @Valid @RequestBody UpdateRatingRequestDTO dto,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(ratingService.update(ratingId, dto, userId));
+            @Valid @RequestBody UpdateRatingRequestDTO dto) {
+        return ResponseEntity.ok(ratingService.update(ratingId, dto));
     }
 
     @DeleteMapping("/{ratingId}")
     public ResponseEntity<Boolean> delete(
-            @PathVariable long ratingId,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(ratingService.delete(ratingId, userId));
+            @PathVariable long ratingId) {
+        return ResponseEntity.ok(ratingService.delete(ratingId));
     }
 
     @GetMapping("/{sourceId}")

@@ -5,11 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableAsync
-public class SpringConfig implements WebMvcConfigurer {
+public class SpringConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
