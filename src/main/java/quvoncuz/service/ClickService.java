@@ -219,7 +219,7 @@ public class ClickService {
             log.info("transaction begun at save");
             transaction = clickTransactionRepository.save(transaction);
 
-            log.info("Transaction paid: {}", /*objectMapper.writeValueAsString(paidTransaction)*/ transaction.toString());
+            log.info("Transaction paid: {}", transaction.getId());
             PaymentEntity payment = paymentRepository.findById(Long.parseLong(transaction.getMerchantTransId()))
                     .orElseThrow(() -> new NotFoundException("Bill not found"));
             payment.setStatus(PaymentStatus.PAID);
