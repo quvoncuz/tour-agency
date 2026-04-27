@@ -25,6 +25,7 @@ import quvoncuz.service.AgencyService;
 import quvoncuz.service.NotificationService;
 import quvoncuz.service.ProfileService;
 import quvoncuz.service.TourService;
+import quvoncuz.util.SecurityUtil;
 
 import java.util.List;
 
@@ -42,7 +43,8 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
-    public TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId) {
+    public TourFullInfo createTour(CreateTourRequestDTO dto) {
+        Long ownerId = SecurityUtil.getCurrentUserId();
         AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
 
         if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)) {
@@ -58,7 +60,8 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
-    public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId) {
+    public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto) {
+        Long ownerId = SecurityUtil.getCurrentUserId();
         AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
         TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
 
@@ -80,7 +83,8 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
-    public TourFullInfo updateTourPrice(Long tourId, Long newPrice, Long userId) {
+    public TourFullInfo updateTourPrice(Long tourId, Long newPrice) {
+        Long userId = SecurityUtil.getCurrentUserId();
         ProfileEntity profile = profileService.findById(userId);
         if (profile.getRole() != Role.AGENCY) {
             throw new PermissionDeniedException("You don't have permission");
@@ -109,7 +113,8 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
-    public Boolean deleteTour(Long tourId, Long ownerId) {
+    public Boolean deleteTour(Long tourId) {
+        Long ownerId = SecurityUtil.getCurrentUserId();
         Long agencyId = agencyService.findByOwnerId(ownerId)
                 .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
         tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
@@ -145,10 +150,12 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
+    public Page<TourShortInfo> getAllSavedTours(int page, int size) {
+        Long userId = SecurityUtil.getCurrentUserId();
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        List<Long> allSavedTourIdByUserId = savedTourRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+        List<Long> allSavedTourIdByUserId = savedTourRepository
+                .findAllByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(SavedTourEntity::getTourId)
                 .toList();

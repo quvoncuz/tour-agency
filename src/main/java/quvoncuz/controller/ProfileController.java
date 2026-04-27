@@ -19,30 +19,26 @@ public class ProfileController {
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Boolean> deleteById(
-            @PathVariable long userId,
-            @RequestHeader(value = "X-User-Id") long adminId) {
-        return ResponseEntity.ok(profileService.deleteById(userId, adminId));
+            @PathVariable long userId) {
+        return ResponseEntity.ok(profileService.deleteById(userId));
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<ProfileDTO> getProfileById(
-            @PathVariable long userId,
-            @RequestHeader(value = "X-User-Id") long adminId) {
-        return ResponseEntity.ok(profileService.getProfileById(userId, adminId));
+            @PathVariable long userId) {
+        return ResponseEntity.ok(profileService.getProfileById(userId));
     }
 
     @PutMapping("/{profileId}")
     public ResponseEntity<ProfileFullInfo> update(@Valid @RequestBody UpdateProfileRequestDTO dto,
-                                                  @PathVariable long profileId,
-                                                  @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(profileService.updateProfile(dto, profileId, userId));
+                                                  @PathVariable long profileId) {
+        return ResponseEntity.ok(profileService.updateProfile(dto, profileId));
     }
 
     @GetMapping("/all")
     public ResponseEntity<Page<ProfileDTO>> getAllProfiles(
-            @RequestHeader(value = "X-User-Id") long adminId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(profileService.getAllProfiles(adminId, page, size));
+        return ResponseEntity.ok(profileService.getAllProfiles(page, size));
     }
 }

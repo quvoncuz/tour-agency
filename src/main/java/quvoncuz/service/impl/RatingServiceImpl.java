@@ -24,6 +24,7 @@ import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.RatingRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.RatingService;
+import quvoncuz.util.SecurityUtil;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,7 +43,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     @Transactional
-    public RatingFullInfo create(RatingRequestDTO dto, Long userId) {
+    public RatingFullInfo create(RatingRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         if (hasRated(userId, dto.getSourceId(), dto.getType())) {
             throw new AlreadyExistsException("You have already rated this item");
         }
@@ -63,7 +65,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     @Transactional
-    public RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto, Long userId) {
+    public RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         RatingEntity rating = ratingRepository.findById(ratingId).orElseThrow(() -> new NotFoundException("Rating not found"));
         if (!rating.getUserId().equals(userId)) {
             throw new DoNotMatchException("You don't have permission");
@@ -78,7 +81,8 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     @Transactional
-    public Boolean delete(Long ratingId, Long userId) {
+    public Boolean delete(Long ratingId) {
+        Long userId = SecurityUtil.getCurrentUserId();
         logger.info("User {} deleted a rating with id {}", userId, ratingId);
         return ratingRepository.deleteByIdAndUserId(ratingId, userId);
     }

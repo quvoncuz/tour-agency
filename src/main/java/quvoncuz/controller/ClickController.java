@@ -20,9 +20,8 @@ public class ClickController {
 
     @PostMapping("/pay")
     public ResponseEntity<PaymentResponse> pay(
-            @Valid @RequestBody PaymentRequestDTO request,
-            @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(clickService.generatePaymentUrl(request, userId));
+            @Valid @RequestBody PaymentRequestDTO request) {
+        return ResponseEntity.ok(clickService.generatePaymentUrl(request));
     }
 
     @PostMapping("/prepare")
