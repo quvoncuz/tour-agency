@@ -16,17 +16,15 @@ public class CreateTourRequestDTO {
     @Size(max = 255, message = "Description length restricted")
     @NotBlank(message = "Description is mandatory")
     private String description;
+    @Size(max = 255, message = "Destination length restricted")
     @NotBlank(message = "Destination is mandatory")
     private String destination;
-    @NotNull(message = "Price is mandatory")
     @Positive(message = "Price must be positive")
-    private Long price;
-    @NotNull(message = "Duration (days) is mandatory")
+    private long price;
     @Positive(message = "Days must be positive")
-    private Integer durationDays;
-    @NotNull(message = "Max seats is mandatory")
+    private int durationDays;
     @Positive(message = "Seats must be positive")
-    private Integer maxSeats;
+    private int maxSeats;
     @NotNull(message = "Starting date is mandatory")
     private LocalDate startDate;
     @NotNull(message = "End date is mandatory")

@@ -18,13 +18,10 @@ public class UpdateTourRequestDTO {
     private String description;
     @NotBlank(message = "Destination is mandatory")
     private String destination;
-    @NotNull(message = "Price is mandatory")
-    @NotNull(message = "Duration (days) is mandatory")
     @Positive(message = "Days must be positive")
-    private Integer durationDays;
-    @NotNull(message = "Max seats is mandatory")
+    private int durationDays;
     @Positive(message = "Seats must be positive")
-    private Integer maxSeats;
+    private int maxSeats;
     @NotNull(message = "Start date is mandatory")
     private LocalDate startDate;
     @NotNull(message = "End date is mandatory")

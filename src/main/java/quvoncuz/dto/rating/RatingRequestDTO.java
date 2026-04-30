@@ -2,12 +2,14 @@ package quvoncuz.dto.rating;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import quvoncuz.enums.RatingType;
 
 @Data
 public class RatingRequestDTO {
+    @Positive(message = "Id must be positive")
     private long sourceId;
     private RatingType type;
     @Min(value = 1, message = "Stars must be between 1 and 5")

@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -26,24 +27,25 @@ public class TourController {
 
     @PutMapping("/{tourId}")
     public ResponseEntity<TourFullInfo> updateTour(
-            @PathVariable long tourId,
+            @PathVariable @Positive(message = "Id must be positive") long tourId,
             @Valid @RequestBody UpdateTourRequestDTO dto) {
         return ResponseEntity.ok(tourService.updateTour(tourId, dto));
     }
 
     @PutMapping("/{tourId}/update")
-    public ResponseEntity<TourFullInfo> updateTourPrice(@PathVariable long tourId,
-                                                        @RequestBody long price) {
+    public ResponseEntity<TourFullInfo> updateTourPrice(
+            @PathVariable @Positive(message = "Id must be positive") long tourId,
+            @RequestBody @Positive(message = "Id must be positive") long price) {
         return ResponseEntity.ok(tourService.updateTourPrice(tourId, price));
     }
 
     @DeleteMapping("/{tourId}")
     public ResponseEntity<Boolean> delete(
-            @PathVariable long tourId) {
+            @PathVariable @Positive(message = "Id must be positive") long tourId) {
         return ResponseEntity.ok(tourService.deleteTour(tourId));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-by")
     public ResponseEntity<Page<TourShortInfo>> getAllTour(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -51,7 +53,7 @@ public class TourController {
     }
 
 
-    @GetMapping("/all-active")
+    @GetMapping("/all")
     public ResponseEntity<Page<TourShortInfo>> getAllActiveTour(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -60,7 +62,7 @@ public class TourController {
 
     @GetMapping("/{tourId}")
     public ResponseEntity<TourFullInfo> getById(
-            @PathVariable long tourId) {
+            @PathVariable @Positive(message = "Id must be positive") long tourId) {
         return ResponseEntity.ok(tourService.getById(tourId));
     }
 

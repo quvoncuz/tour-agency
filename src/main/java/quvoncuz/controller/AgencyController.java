@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -42,20 +43,20 @@ public class AgencyController {
 
     @PutMapping("/{agencyId}")
     public ResponseEntity<AgencyFullInfo> update(
-            @PathVariable long agencyId,
+            @PathVariable @Positive(message = "Id must be positive") long agencyId,
             @Valid @RequestBody UpdateAgencyRequestDTO dto) {
         return ResponseEntity.ok(agencyService.update(agencyId, dto));
     }
 
     @DeleteMapping("/{agencyId}")
     public ResponseEntity<Boolean> deleteById(
-            @PathVariable long agencyId) {
+            @PathVariable @Positive(message = "Id must be positive") long agencyId) {
         return ResponseEntity.ok(agencyService.deleteById(agencyId));
     }
 
     @GetMapping("/{agencyId}")
     public ResponseEntity<AgencyDTO> findById(
-            @PathVariable long agencyId) {
+            @PathVariable @Positive(message = "Id must be positive") long agencyId) {
         return ResponseEntity.ok(agencyService.findByAgencyId(agencyId));
     }
 }

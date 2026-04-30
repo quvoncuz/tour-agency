@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -31,37 +32,44 @@ public class BookingController {
 
     @PutMapping("/{bookingId}")
     public ResponseEntity<BookingFullInfo> updateBookingSeats(
-            @PathVariable long bookingId,
+            @PathVariable @Positive(message = "Id must be positive") long bookingId,
             @Valid @RequestBody UpdateBookingRequestDTO dto) {
         return ResponseEntity.ok(bookingService.updateBookingSeats(bookingId, dto));
     }
 
     @GetMapping("/updated")
-    public ResponseEntity<List<BookingFullInfo>> getUpdatedBooking(@RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.getUpdatedBooking(userId));
+    public ResponseEntity<List<BookingFullInfo>> getUpdatedBooking() {
+        return ResponseEntity.ok(bookingService.getUpdatedBooking());
     }
 
     @PostMapping("/{bookingId}/confirm")
-    public ResponseEntity<BookingFullInfo> confirmUpdatedBooking(@PathVariable long bookingId,
-                                                                 @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.confirmUpdatedBooking(bookingId, userId));
+    public ResponseEntity<BookingFullInfo> confirmUpdatedBooking(
+            @PathVariable @Positive(message = "Id must be positive") long bookingId) {
+        return ResponseEntity.ok(bookingService.confirmUpdatedBooking(bookingId));
     }
 
     @PostMapping("/{bookingId}/cancel")
-    public ResponseEntity<BookingFullInfo> cancelUpdateBooking(@PathVariable long bookingId,
-                                                               @RequestHeader(value = "X-User-Id") long userId) {
-        return ResponseEntity.ok(bookingService.cancelUpdateBooking(bookingId, userId));
+    public ResponseEntity<BookingFullInfo> cancelUpdateBooking(
+            @PathVariable @Positive(message = "Id must be positive") long bookingId) {
+        return ResponseEntity.ok(bookingService.cancelUpdateBooking(bookingId));
     }
 
     @GetMapping("{bookingId}")
     public ResponseEntity<BookingFullInfo> findById(
-            @PathVariable long bookingId) {
-        return ResponseEntity.ok(bookingService.findById(bookingId));
+            @PathVariable @Positive(message = "Id must be positive") long bookingId) {
+        return ResponseEntity.ok(bookingService.findFullInfoById(bookingId));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<Page<BookingShortInfo>> findAll(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(bookingService.findAllByUser(page, size));
     }
 
     @GetMapping({"/by-user", "/by-user/{userId}"})
     public ResponseEntity<Page<BookingShortInfo>> findAllByUserId(
-            @PathVariable(required = false) long userId,
+            @PathVariable(required = false) @Positive(message = "Id must be positive") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(bookingService.findAllByUserId(userId, page, size));
@@ -69,7 +77,7 @@ public class BookingController {
 
     @GetMapping("/by-tour/{tourId}")
     public ResponseEntity<Page<BookingShortInfo>> findAllByTourId(
-            @PathVariable long tourId,
+            @PathVariable @Positive(message = "Id must be positive") long tourId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(bookingService.findAllByTourId(tourId, page, size));
@@ -77,7 +85,7 @@ public class BookingController {
 
     @GetMapping("/by-agency/{agencyId}")
     public ResponseEntity<Page<BookingShortInfo>> findAllByAgencyId(
-            @PathVariable long agencyId,
+            @PathVariable @Positive(message = "Id must be positive") long agencyId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(bookingService.findAllByAgencyId(agencyId, page, size));

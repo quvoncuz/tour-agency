@@ -1,9 +1,11 @@
 package quvoncuz.dto.agency;
 
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 public class AgencyApproveRequestDTO {
-    private Long agencyId;
+    @Positive(message = "Id must be positive")
+    private long agencyId;
     private Boolean approve;
 }

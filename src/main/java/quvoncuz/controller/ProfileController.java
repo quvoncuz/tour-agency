@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -19,19 +20,20 @@ public class ProfileController {
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Boolean> deleteById(
-            @PathVariable long userId) {
+            @PathVariable @Positive(message = "Id must be positive") long userId) {
         return ResponseEntity.ok(profileService.deleteById(userId));
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<ProfileDTO> getProfileById(
-            @PathVariable long userId) {
+            @PathVariable @Positive(message = "Id must be positive") long userId) {
         return ResponseEntity.ok(profileService.getProfileById(userId));
     }
 
     @PutMapping("/{profileId}")
-    public ResponseEntity<ProfileFullInfo> update(@Valid @RequestBody UpdateProfileRequestDTO dto,
-                                                  @PathVariable long profileId) {
+    public ResponseEntity<ProfileFullInfo> update(
+            @Valid @RequestBody UpdateProfileRequestDTO dto,
+            @PathVariable @Positive(message = "Id must be positive") long profileId) {
         return ResponseEntity.ok(profileService.updateProfile(dto, profileId));
     }
 

@@ -1,6 +1,7 @@
 package quvoncuz.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -27,31 +28,38 @@ public class RatingController {
 
     @PutMapping("/{ratingId}")
     public ResponseEntity<RatingFullInfo> update(
-            @PathVariable long ratingId,
+            @PathVariable @Positive(message = "Id must be positive") long ratingId,
             @Valid @RequestBody UpdateRatingRequestDTO dto) {
         return ResponseEntity.ok(ratingService.update(ratingId, dto));
     }
 
     @DeleteMapping("/{ratingId}")
     public ResponseEntity<Boolean> delete(
-            @PathVariable long ratingId) {
+            @PathVariable @Positive(message = "Id must be positive") long ratingId) {
         return ResponseEntity.ok(ratingService.delete(ratingId));
     }
 
     @GetMapping("/{sourceId}")
     public ResponseEntity<Page<RatingShortInfo>> findBySourceIdAndType(
-            @PathVariable long sourceId,
+            @PathVariable @Positive(message = "Id must be positive") long sourceId,
             @RequestParam(defaultValue = "AGENCY") RatingType type,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "1") int size) {
         return ResponseEntity.ok(ratingService.findBySourceIdAndType(sourceId, type, page, size));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/by-user")
     public ResponseEntity<Page<RatingShortInfo>> findByUserId(
-            @RequestParam long userId,
+            @RequestParam @Positive(message = "Id must be positive") long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(ratingService.findByUserId(userId, page, size));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<Page<RatingShortInfo>> findOwnRatings(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ratingService.findOwnRatings(page, size));
     }
 }
