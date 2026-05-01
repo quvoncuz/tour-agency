@@ -21,5 +21,5 @@ public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
 
     Page<PaymentEntity> findAllByTourId(Long tourId, Pageable pageable);
 
-    Page<PaymentEntity> findAllByStatusIsOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
+    Page<PaymentEntity> findAllByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
 }

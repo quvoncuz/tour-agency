@@ -13,5 +13,5 @@ public interface SavedTourRepository extends JpaRepository<SavedTourEntity, Long
 
     Boolean deleteByTourIdAndUserId(Long tourId, Long userId);
 
-    List<SavedTourEntity> findAllByUserId(Long userId);
+    List<SavedTourEntity> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface RatingRepository extends JpaRepository<RatingEntity, Long> {
 
-    Page<RatingEntity> findBySourceIdAndType(Long sourceId, RatingType type, Pageable pageable);
+    Page<RatingEntity> findAllBySourceIdAndType(Long sourceId, RatingType type, Pageable pageable);
 
     boolean deleteByIdAndUserId(Long id, Long userId);
 

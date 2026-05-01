@@ -12,15 +12,17 @@ import java.util.Optional;
 
 public interface RatingService {
 
-    RatingFullInfo create(RatingRequestDTO dto, Long userId);
+    RatingFullInfo create(RatingRequestDTO dto);
 
-    RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto, Long userId);
+    RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto);
 
-    Boolean delete(Long ratingId, Long userId);
+    Boolean delete(Long ratingId);
 
     Page<RatingShortInfo> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size);
 
     Page<RatingShortInfo> findByUserId(Long userId, int page, int size);
+
+    Page<RatingShortInfo> findOwnRatings(int page, int size);
 
     Optional<RatingEntity> findByUserIdAndSourceIdAndType(
             Long userId, Long sourceId, RatingType type);

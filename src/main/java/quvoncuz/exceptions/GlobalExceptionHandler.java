@@ -1,10 +1,11 @@
 package quvoncuz.exceptions;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -12,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@ControllerAdvice
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -49,23 +49,25 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
-        logger.warn("Illegal argument: {}", ex.getMessage());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgNotValid(MethodArgumentNotValidException ex) {
+        logger.warn("Validation failed: {}", ex.getMessage());
+
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
-        logger.warn("Illegal state: {}", ex.getMessage());
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        logger.warn("Constraint violations: {}", ex.getMessage());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         logger.error("Unexpected error: {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Internal server error: " + ex.getMessage());
+                "Internal server error");
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

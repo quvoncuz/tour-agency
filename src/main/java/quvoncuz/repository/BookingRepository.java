@@ -11,6 +11,7 @@ import quvoncuz.entities.BookingEntity;
 import quvoncuz.enums.BookingStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
@@ -31,4 +32,15 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     boolean existsByTourIdAndUserIdAndStatusIs(Long tourId, Long userId, BookingStatus status);
 
     boolean existsByTourIdAndUserIdAndStatusIsNot(Long tourId, Long userId, BookingStatus status);
+
+    Optional<BookingEntity> findByIdAndUserId(long bookingId, long userId);
+
+    List<BookingEntity> findAllByTourIdAndStatus(Long tourId, BookingStatus bookingStatus);
+
+    List<BookingEntity> findAllByUserIdAndStatus(Long userId, BookingStatus status);
+
+    Page<BookingEntity> findAllByUserId(Long userId, Pageable pageable);
+
+    @Query("from BookingEntity as b where b.tour.agencyId = ?1 order by b.bookedAt desc ")
+    Page<BookingEntity> findAllByAgencyId(long userId, Pageable pageable);
 }

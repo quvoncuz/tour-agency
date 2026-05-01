@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface ProfileRepository extends JpaRepository<ProfileEntity, Long> {
+
     Optional<ProfileEntity> findByUsername(String username);
 
     boolean existsByUsername(String username);
@@ -20,6 +21,6 @@ public interface ProfileRepository extends JpaRepository<ProfileEntity, Long> {
 
     @Modifying
     @Transactional
-    @Query("update ProfileEntity set role = ?1 where id = ?2")
+    @Query("update ProfileEntity p set p.role = ?1 where p.id = ?2")
     void updateProfileRole(Role role, long userId);
 }

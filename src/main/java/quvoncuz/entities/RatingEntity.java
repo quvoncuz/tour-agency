@@ -7,7 +7,7 @@ import quvoncuz.enums.RatingType;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rating")
+@Table(name = "ratings")
 @Getter
 @Setter
 @Builder

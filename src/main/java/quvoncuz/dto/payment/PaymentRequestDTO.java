@@ -1,5 +1,6 @@
 package quvoncuz.dto.payment;
 
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,7 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentRequestDTO {
-    private Long tourId;
-    private Long bookingId;
+    @Positive(message = "Tour is invalid")
+    private long tourId;
+
+    @Positive(message = "Booking is invalid")
+    private long bookingId;
+
     private String returnUrl;
 }

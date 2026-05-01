@@ -4,11 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import quvoncuz.enums.AgencyStatus;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
-@Table(name = "agency")
+@Table(name = "agencies")
 @Getter
 @Setter
 @Builder
@@ -28,10 +27,10 @@ public class AgencyEntity {
     @Column
     private String name;
 
-    @Column
+    @Column(unique = true)
     private String phone;
 
-    @Column
+    @Column(unique = true)
     private String email;
 
     @Column

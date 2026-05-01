@@ -8,20 +8,20 @@ create table click_transactions
     amount            bigint       not null,
     click_paydoc_id   bigint,
     click_trans_id    bigint,
-    created_at        timestamp(6),
+    created_at        timestamp,
     merchant_trans_id varchar(255) not null,
     sign_string       text,
-    sign_time         timestamp(6),
+    sign_time         timestamp,
     status            varchar(255) not null
         constraint click_transactions_status_check
             check ((status)::text = ANY
         ((ARRAY ['CREATED'::character varying, 'PREPARED'::character varying, 'PAID'::character varying, 'CANCELLED'::character varying, 'REFUND'::character varying])::text[])),
     user_id           bigint       not null
         constraint foreign_key_profile
-            references profile,
+            references profiles,
     payment_id        bigint
         constraint unique_payment_id_for_click
             unique
         constraint foreign_key_payment_for_click
-            references payment
+            references payments
 );

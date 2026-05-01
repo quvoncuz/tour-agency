@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "profile")
+@Table(name = "profiles")
 @Getter
 @Setter
 @Builder
@@ -24,10 +24,10 @@ public class ProfileEntity {
     @Column(name = "full_name")
     private String fullName;
 
-    @Column
+    @Column(unique = true)
     private String username;
 
-    @Column
+    @Column(unique = true)
     private String email;
 
     @Column

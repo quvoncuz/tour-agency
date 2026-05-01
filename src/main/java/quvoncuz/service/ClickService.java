@@ -1,7 +1,5 @@
 package quvoncuz.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +22,7 @@ import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
 import quvoncuz.repository.PaymentRepository;
 import quvoncuz.util.ClickSignUtil;
+import quvoncuz.util.SecurityUtil;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +32,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ClickService {
 
@@ -48,12 +48,12 @@ public class ClickService {
     @Value("${click.secret-key}")
     private String secretKey;
 
-    private final ObjectMapper objectMapper;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
 
-    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request, Long userId) throws JsonProcessingException {
+    public PaymentResponse generatePaymentUrl(PaymentRequestDTO request) {
+        Long userId = SecurityUtil.getCurrentUserId();
         PaymentEntity payment = paymentRepository
                 .findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, request.getTourId(), request.getBookingId(), PaymentStatus.PENDING)
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
@@ -71,8 +71,6 @@ public class ClickService {
                         .build()
         );
 
-        log.info("In creating payment url");
-
         log.info("Transaction created: id={}, merchantTransId={}, amount={}",
                 save.getId(), save.getMerchantTransId(), save.getAmount());
         return PaymentResponse.builder()
@@ -83,65 +81,62 @@ public class ClickService {
     @Transactional
     public ClickResponse prepare(PrepareRequest request) {
 
-        log.error(">>> PREPARE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
-                request.getClick_trans_id(),
-                request.getService_id(),
-                request.getMerchant_trans_id(),
+        log.info(">>> PREPARE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
+                request.getClickTransId(),
+                request.getServiceId(),
+                request.getMerchantTransId(),
                 request.getAmount(),
                 request.getAction(),
-                request.getSign_time(),
-                request.getSign_string());
+                request.getSignTime(),
+                request.getSignString());
 
         String expectedSign = ClickSignUtil.generatePrepareSign(
-                request.getClick_trans_id(),
-                request.getService_id(),
+                request.getClickTransId(),
+                request.getServiceId(),
                 secretKey,
-                request.getMerchant_trans_id(),
+                request.getMerchantTransId(),
                 request.getAmount(),
                 request.getAction(),
-                request.getSign_time()
+                request.getSignTime()
         );
 
-        log.error(">>> MY sign  : [{}]", expectedSign);
-        log.error(">>> HIS sign : [{}]", request.getSign_string());
-        log.error(">>> SECRET   : [{}]", secretKey);
-
-        if (!expectedSign.equals(request.getSign_string())) {
-            log.error("Signature failed in Prepare-method: {}", request.getSign_string());
-            return buildError(ClickErrorCode.SIGN_CHECK_FAILED, request.getMerchant_trans_id(), null, request.getClick_trans_id());
+        if (!expectedSign.equals(request.getSignString())) {
+            log.error("Signature failed in Prepare-method: {}", request.getSignString());
+            return buildError(ClickErrorCode.SIGN_CHECK_FAILED, request.getMerchantTransId(), null, request.getClickTransId());
         }
 
         if (request.getAction() != 0) {
-            return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchant_trans_id(), null, request.getClick_trans_id());
+            log.error("Action failed in Prepare methods. Expected: 0, result: {}", request.getAction());
+            return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchantTransId(), null, request.getClickTransId());
         }
 
         ClickTransactionEntity transaction = new ClickTransactionEntity();
 
 
-        Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransId(request.getMerchant_trans_id());
+        Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransIdOrderByCreatedAtDesc(request.getMerchantTransId());
         if (optionalTransaction.isPresent()) {
             transaction = optionalTransaction.get();
             if (transaction.getStatus() == ClickTransactionStatus.PAID) {
                 log.error("'Transaction-Already-Paid' error: id={}", transaction.getId());
-                return buildError(ClickErrorCode.ALREADY_PAID, request.getMerchant_trans_id(), null, request.getClick_trans_id());
+                return buildError(ClickErrorCode.ALREADY_PAID, request.getMerchantTransId(), null, request.getClickTransId());
             }
 
             if (transaction.getStatus() == ClickTransactionStatus.CANCELLED) {
                 log.error("Transaction CANCELLED error in Prepare: id={}", transaction.getId());
-                return buildError(ClickErrorCode.TRANSACTION_CANCELLED, request.getMerchant_trans_id(), null, request.getClick_trans_id());
+                return buildError(ClickErrorCode.TRANSACTION_CANCELLED, request.getMerchantTransId(), null, request.getClickTransId());
             }
 
             if (!transaction.getAmount().equals(Double.parseDouble(request.getAmount()))) {
                 log.error("'Transaction-Amount-Incorrect' error in Prepare-method expected {} and result {}", transaction.getAmount(), request.getAmount());
-                return buildError(ClickErrorCode.INCORRECT_AMOUNT, request.getMerchant_trans_id(), null, request.getClick_trans_id());
+                return buildError(ClickErrorCode.INCORRECT_AMOUNT, request.getMerchantTransId(), null, request.getClickTransId());
             }
 
-            transaction.setClickTransId(request.getClick_trans_id());
-            transaction.setClickPaydocId(request.getClick_paydoc_id());
+            transaction.setClickTransId(request.getClickTransId());
+            transaction.setClickPaydocId(request.getClickPaydocId());
             transaction.setAmount(Double.parseDouble(request.getAmount()));
             transaction.setStatus(ClickTransactionStatus.PREPARED);
-            transaction.setSignString(request.getSign_string());
-            transaction.setSignTime(LocalDateTime.parse(request.getSign_time(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            transaction.setSignString(request.getSignString());
+            transaction.setSignTime(LocalDateTime.parse(request.getSignTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             transaction = clickTransactionRepository.save(transaction);
 
             log.info("Transaction saved in PREPARED status: {}", transaction.getId());
@@ -160,61 +155,61 @@ public class ClickService {
     @Transactional
     public ClickResponse complete(CompleteRequest request) {
 
-        log.error(">>> COMPLETE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
-                request.getClick_trans_id(),
-                request.getService_id(),
-                request.getMerchant_trans_id(),
+        log.info(">>> COMPLETE REQUEST: trans={} service={} merchant={} amount=[{}] action={} time=[{}] sign=[{}]",
+                request.getClickTransId(),
+                request.getServiceId(),
+                request.getMerchantTransId(),
                 request.getAmount(),
                 request.getAction(),
-                request.getSign_time(),
-                request.getSign_string());
+                request.getSignTime(),
+                request.getSignString());
 
         String expectedSign = ClickSignUtil.generateCompleteSign(
-                request.getClick_trans_id(),
-                request.getService_id(),
+                request.getClickTransId(),
+                request.getServiceId(),
                 secretKey,
-                request.getMerchant_trans_id(),
-                Long.valueOf(request.getMerchant_prepare_id()),
+                request.getMerchantTransId(),
+                Long.valueOf(request.getMerchantPrepareId()),
                 request.getAmount(),
                 request.getAction(),
-                request.getSign_time()
+                request.getSignTime()
         );
 
-        if (!expectedSign.equals(request.getSign_string())) {
-            log.error("Signature failed in Complete method {}", request.getSign_string());
-            return buildError(ClickErrorCode.SIGN_CHECK_FAILED, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+        if (!expectedSign.equals(request.getSignString())) {
+            log.error("Signature failed in Complete method {}", request.getSignString());
+            return buildError(ClickErrorCode.SIGN_CHECK_FAILED, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         if (request.getAction() != 1) {
             log.error("Action failed in Complete method {}", request.getAction());
-            return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findByIdAndMerchantTransId(
-                request.getMerchant_prepare_id().longValue(), request.getMerchant_trans_id());
+                request.getMerchantPrepareId().longValue(), request.getMerchantTransId());
 
         if (optionalTransaction.isEmpty()) {
-            log.error("Transaction not exists error in Complete method {}", request.toString());
-            return buildError(ClickErrorCode.TRANSACTION_NOT_EXIST, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            log.error("Transaction not exists error in Complete method {}", request);
+            return buildError(ClickErrorCode.TRANSACTION_NOT_EXIST, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         ClickTransactionEntity transaction = optionalTransaction.get();
 
         if (transaction.getStatus() == ClickTransactionStatus.PAID) {
             log.error("Transaction already paid error in Complete method {}", request);
-            return buildError(ClickErrorCode.ALREADY_PAID, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            return buildError(ClickErrorCode.ALREADY_PAID, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         if (transaction.getStatus() == ClickTransactionStatus.CANCELLED) {
             log.error("Transaction canceled error in Complete method {}", request);
-            return buildError(ClickErrorCode.TRANSACTION_CANCELLED, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            return buildError(ClickErrorCode.TRANSACTION_CANCELLED, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         if (!transaction.getAmount().equals(Double.parseDouble(request.getAmount()))) {
             transaction.setStatus(ClickTransactionStatus.CANCELLED);
             ClickTransactionEntity cancelledTransaction = clickTransactionRepository.save(transaction);
             log.info("Transaction cancelled: {}", cancelledTransaction);
-            return buildError(ClickErrorCode.INCORRECT_AMOUNT, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            return buildError(ClickErrorCode.INCORRECT_AMOUNT, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
         try {
@@ -222,9 +217,9 @@ public class ClickService {
             log.info("transaction begun at status");
             transaction.setStatus(ClickTransactionStatus.PAID);
             log.info("transaction begun at save");
-            ClickTransactionEntity paidTransaction = clickTransactionRepository.save(transaction);
+            transaction = clickTransactionRepository.save(transaction);
 
-            log.info("Transaction paid: {}", /*objectMapper.writeValueAsString(paidTransaction)*/ transaction.toString());
+            log.info("Transaction paid: {}", transaction.getId());
             PaymentEntity payment = paymentRepository.findById(Long.parseLong(transaction.getMerchantTransId()))
                     .orElseThrow(() -> new NotFoundException("Bill not found"));
             payment.setStatus(PaymentStatus.PAID);
@@ -238,10 +233,10 @@ public class ClickService {
             log.info("Bill turned paid status!");
         } catch (Exception e) {
             log.error(transaction.toString());
-            return buildError(ClickErrorCode.FAILED_TO_UPDATE_USER, request.getMerchant_trans_id(), request.getMerchant_prepare_id(), request.getClick_trans_id());
+            return buildError(ClickErrorCode.FAILED_TO_UPDATE_USER, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
         }
 
-        ClickResponse clickResponse = buildSuccess(request.getClick_trans_id(), request.getMerchant_trans_id(), transaction.getId().intValue());
+        ClickResponse clickResponse = buildSuccess(request.getClickTransId(), request.getMerchantTransId(), transaction.getId().intValue());
         log.info("SUCCESS RESPONSE in Complete-method: {}", clickResponse);
         return clickResponse;
     }
@@ -251,21 +246,21 @@ public class ClickService {
                                      Integer merchantPrepareId,
                                      Long clickTransId) {
         return ClickResponse.builder()
+                .clickTransId(clickTransId)
+                .merchantTransId(merchantTransId)
+                .merchantPrepareId(merchantPrepareId)
                 .error(code.getCode())
-                .error_note(code.getNote())
-                .merchant_trans_id(merchantTransId)
-                .merchant_prepare_id(merchantPrepareId)
-                .click_trans_id(clickTransId)
+                .errorNote(code.getNote())
                 .build();
     }
 
     private ClickResponse buildSuccess(Long clickTransId, String merchantTransId, Integer merchantPrepareId) {
         return ClickResponse.builder()
-                .click_trans_id(clickTransId)
-                .merchant_trans_id(merchantTransId)
-                .merchant_prepare_id(merchantPrepareId)
+                .clickTransId(clickTransId)
+                .merchantTransId(merchantTransId)
+                .merchantPrepareId(merchantPrepareId)
                 .error(ClickErrorCode.SUCCESS.getCode())
-                .error_note(ClickErrorCode.SUCCESS.getNote())
+                .errorNote(ClickErrorCode.SUCCESS.getNote())
                 .build();
     }
 

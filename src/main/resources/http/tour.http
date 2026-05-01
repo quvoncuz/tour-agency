@@ -1,7 +1,7 @@
 ### create tour
-POST localhost:8080/api/v1/tour/create
+POST localhost:8080/api/v1/tours
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "title": "Tour to Paris",
@@ -15,9 +15,9 @@ X-User-Id: {{userId}}
 }
 
 ### update tour
-PUT localhost:8080/api/v1/tour/1
+PUT localhost:8080/api/v1/tours/1
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "title": "Tour to Paris and Italy",
@@ -26,25 +26,35 @@ X-User-Id: {{userId}}
   "durationDays": 7,
   "startDate": "2026-05-24",
   "endDate": "2026-05-31",
-  "maxSeats": 100,
-  "price": 100
+  "maxSeats": 100
+}
+
+### update tour price
+PUT http://localhost:8080/api/v1/tours/1/price
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+{
+  "price": 150
 }
 
 ### delete tour
-DELETE localhost:8080/tour/1
-X-User-Id: {{userId}}
+DELETE localhost:8080/api/v1/tours/1
+Authorization: Bearer {{jwt}}
 
 ### get all tour
-GET localhost:8080/tour/all
+GET localhost:8080/api/v1/tours/all
+Authorization: Bearer {{jwt}}
 
 ### get all actice tour
-GET localhost:8080/tour/all-active
+GET localhost:8080/api/v1/tours/all-by
 
 ### get by id
-GET localhost:8080/tour/2
+GET localhost:8080/api/v1/tours/1
 
 ### get saved tour
-GET localhost:8080/tour/saved
+GET localhost:8080/api/v1/tours/saved
+Authorization: Bearer {{jwt}}
 
 ### search
-GET localhost:8080/tour/search?query=Italy
+GET localhost:8080/api/v1/tours/search?query=Italy

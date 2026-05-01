@@ -1,24 +1,26 @@
 package quvoncuz.service.impl;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.dto.profile.ProfileDTO;
+import quvoncuz.dto.profile.ProfileFullInfo;
+import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.entities.ProfileEntity;
-import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
+import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.ProfileService;
+import quvoncuz.util.SecurityUtil;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -28,103 +30,94 @@ public class ProfileServiceImpl implements ProfileService {
     private final Logger logger = LoggerFactory.getLogger(ProfileServiceImpl.class);
     private final ProfileRepository profileRepository;
 
-    @Value("${admin.default.username}")
-    private String adminUsername;
-
-    @Value("${admin.default.email}")
-    private String adminEmail;
-
-    @Value("${admin.default.password}")
-    private String adminPassword;
-
-    @PostConstruct
-    public void initDefaultAdmin() {
-        if (!existsByUsername(adminUsername)) {
-            ProfileEntity admin = ProfileEntity.builder()
-                    .fullName("admin")
-                    .username(adminUsername)
-                    .email(adminEmail)
-                    .password(adminPassword)
-                    .role(Role.ADMIN)
-                    .gender(Gender.MALE)
-                    .isCreateAgency(false)
-                    .isActive(true)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-            logger.info("Creating default admin with username: {}", adminUsername);
-            profileRepository.save(admin);
-        } else {
-            logger.info("Default admin already exists with username: {}", adminUsername);
-        }
-    }
-
     @Override
+    @Transactional
     public ProfileEntity create(RegistrationRequestDTO dto) {
 
         ProfileEntity profile = ProfileMapper.toEntity(dto);
 
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
 
         logger.info("Created new profile with username: {}", profile.getUsername());
         return profile;
     }
 
     @Override
+    @Transactional
+    public ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        if (profileId.equals(userId)) {
+            throw new DoNotMatchException("You can update yourself only");
+        }
+
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("Profile not found"));
+        profile.setFullName(dto.getFullName());
+        profile.setUsername(dto.getUsername());
+        profile.setEmail(dto.getEmail());
+
+        profile = profileRepository.save(profile);
+
+        return ProfileMapper.toFullInfo(profile);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<ProfileEntity> findByUsername(String username) {
         return profileRepository.findByUsername(username);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean existsByUsername(String username) {
         return profileRepository.existsByUsername(username);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         return profileRepository.existsByEmail(email);
     }
 
     @Override
-    public Boolean deleteById(Long id, Long adminId) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
-            throw new NotFoundException("User with id " + adminId + " is not an admin");
-        }
+    @Transactional
+    public Boolean deleteById(Long id) {
         profileRepository.deleteById(id);
         return true;
     }
 
     @Override
-    public ProfileDTO getProfileById(Long id, Long adminId) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
-            throw new NotFoundException("User with id " + adminId + " is not an admin");
+    @Transactional(readOnly = true)
+    public ProfileDTO getProfileById(Long id) {
+        Long loginId = SecurityUtil.getCurrentUserId();
+        ProfileEntity login = findById(loginId);
+        if (login.getRole() != Role.ADMIN && !login.getId().equals(id)) {
+            throw new PermissionDeniedException("You don't have permission");
         }
-        logger.info("Retrieved profile with id: {} for admin with id: {}", id, adminId);
+        logger.info("Retrieved profile with id: {}", id);
         return ProfileMapper.toDTO(findById(id));
     }
 
     @Override
-    public Page<ProfileDTO> getAllProfiles(Long adminId, int page, int size) {
-        ProfileEntity admin = findById(adminId);
-        if (admin.getRole() != Role.ADMIN) {
-            throw new NotFoundException("User with id " + adminId + " is not an admin");
-        }
+    @Transactional(readOnly = true)
+    public Page<ProfileDTO> getAllProfiles(int page, int size) {
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
-        Page<ProfileEntity> allProfile = profileRepository.findAll(pageRequest);
-        logger.info("Retrieved all profiles for admin with id: {}", adminId);
-        return allProfile.map(ProfileMapper::toDTO);
+
+        logger.info("Retrieved all profiles for admin");
+        return profileRepository.findAll(pageRequest)
+                .map(ProfileMapper::toDTO);
     }
 
     @Override
+    @Transactional
     public void updateRole(Role role, long userId) {
         profileRepository.updateProfileRole(role, userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProfileEntity findById(Long profileId) {
-        return profileRepository.findById(profileId).orElseThrow(() -> new NotFoundException("User not found with id: " + profileId));
+        return profileRepository.findById(profileId).orElseThrow(() -> new NotFoundException("User not found"));
     }
 }
 

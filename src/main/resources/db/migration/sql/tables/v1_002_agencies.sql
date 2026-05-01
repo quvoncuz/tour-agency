@@ -1,7 +1,7 @@
 -- liquibase formatted sql
 
 -- changeset dev:v1_002_agencies
-create table agency
+create table agencies
 (
     approved    boolean,
     rating      double precision,
@@ -9,7 +9,7 @@ create table agency
         primary key,
     owner_id    bigint
         constraint foreign_key_profile_for_agency
-            references profile,
+            references profiles,
     address     varchar(255),
     city        varchar(255),
     description varchar(255),

@@ -1,11 +1,11 @@
 ### delete by id
-DELETE localhost:8080/api/v1/profile/2
-X-User-Id: {{userId}}
+DELETE localhost:8080/api/v1/profiles/2
+Authorization: Bearer {{jwt}}
 
 ### get profile by id
-GET localhost:8080/profile/4
-X-User-Id: {{userId}}
+GET localhost:8080/api/v1/profiles/4
+Authorization: Bearer {{jwt}}
 
 ### get all profiles
-GET localhost:8080/profile/all
-X-User-Id: {{userId}}
+GET localhost:8080/api/v1/profiles/all
+Authorization: Bearer {{jwt}}

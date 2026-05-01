@@ -12,9 +12,12 @@ import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.RatingShortInfo;
 import quvoncuz.dto.rating.UpdateRatingRequestDTO;
 import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.ProfileEntity;
 import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.RatingType;
+import quvoncuz.enums.Role;
+import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.mapper.RatingMapper;
@@ -22,7 +25,9 @@ import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.RatingRepository;
 import quvoncuz.repository.TourRepository;
+import quvoncuz.service.ProfileService;
 import quvoncuz.service.RatingService;
+import quvoncuz.util.SecurityUtil;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,14 +43,15 @@ public class RatingServiceImpl implements RatingService {
     private final BookingRepository bookingRepository;
     private final AgencyRepository agencyRepository;
     private final TourRepository tourRepository;
+    private final ProfileService profileService;
 
-    @Transactional
     @Override
-    public RatingFullInfo create(RatingRequestDTO dto, Long userId) {
+    @Transactional
+    public RatingFullInfo create(RatingRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         if (hasRated(userId, dto.getSourceId(), dto.getType())) {
-            throw new IllegalStateException("You have already rated this item");
+            throw new AlreadyExistsException("You have already rated this item");
         }
-        validateStars(dto.getStars());
         RatingEntity rating = RatingEntity.builder()
                 .userId(userId)
                 .sourceId(dto.getSourceId())
@@ -61,14 +67,14 @@ public class RatingServiceImpl implements RatingService {
         return RatingMapper.toFullInfo(rating);
     }
 
-    @Transactional
     @Override
-    public RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto, Long userId) {
+    @Transactional
+    public RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto) {
+        Long userId = SecurityUtil.getCurrentUserId();
         RatingEntity rating = ratingRepository.findById(ratingId).orElseThrow(() -> new NotFoundException("Rating not found"));
         if (!rating.getUserId().equals(userId)) {
-            throw new DoNotMatchException("It's not your rating");
+            throw new DoNotMatchException("You don't have permission");
         }
-        validateStars(dto.getStars());
         rating.setStars(dto.getStars());
         rating.setComment(dto.getComment());
 
@@ -78,28 +84,59 @@ public class RatingServiceImpl implements RatingService {
     }
 
     @Override
-    public Boolean delete(Long ratingId, Long userId) {
+    @Transactional
+    public Boolean delete(Long ratingId) {
+        Long userId = SecurityUtil.getCurrentUserId();
         logger.info("User {} deleted a rating with id {}", userId, ratingId);
         return ratingRepository.deleteByIdAndUserId(ratingId, userId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<RatingShortInfo> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size) {
+        logger.info("Finding ratings for source {} of type {}", sourceId, type);
+
         PageRequest pageRequest = PageRequest.of(page - 1, size);
-        logger.info("Finding ratings for source {} of type {}, page {}, size {}", sourceId, type, page, size);
-        return ratingRepository.findBySourceIdAndType(sourceId, type, pageRequest)
+
+        return ratingRepository.findAllBySourceIdAndType(sourceId, type, pageRequest)
                 .map(RatingMapper::toShortInfo);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<RatingShortInfo> findByUserId(Long userId, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        long loginId = SecurityUtil.getCurrentUserId();
+
+        ProfileEntity profile = profileService.findById(loginId);
+
+        if (profile.getRole() != Role.ADMIN) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
         logger.info("Finding ratings for user {}", userId);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
         return ratingRepository.findAllByUserId(userId, pageRequest)
                 .map(RatingMapper::toShortInfo);
     }
 
     @Override
+    public Page<RatingShortInfo> findOwnRatings(int page, int size) {
+
+        long userId = SecurityUtil.getCurrentUserId();
+
+        logger.info("Finding ratings for user {}", userId);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        return ratingRepository.findAllByUserId(userId, pageRequest)
+                .map(RatingMapper::toShortInfo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<RatingEntity> findByUserIdAndSourceIdAndType(
             Long userId, Long sourceId, RatingType type) {
         logger.info("Finding rating for user {}, source {}, type {}", userId, sourceId, type);
@@ -122,9 +159,10 @@ public class RatingServiceImpl implements RatingService {
         }
     }
 
+    @Transactional(readOnly = true)
     public boolean hasRated(Long userId, Long sourceId, RatingType target) {
         logger.info("Checking if user {} has rated source {} of type {}", userId, sourceId, target);
-        return existsByUserIdAndSourceIdAndType(userId, sourceId, target);
+        return findByUserIdAndSourceIdAndType(userId, sourceId, target).isPresent();
     }
 
     private void requireCompleteBooking(Long userId, Long sourceId, RatingType type) {
@@ -137,26 +175,15 @@ public class RatingServiceImpl implements RatingService {
                     .orElseThrow(() -> new NotFoundException("Booking not found"));
 
             if (booking.getStatus() != BookingStatus.CONFIRMED) {
-                throw new IllegalStateException("You can only rate completed bookings");
+                throw new DoNotMatchException("You can only rate completed bookings");
             }
         } else if (type == RatingType.AGENCY) {
             boolean hasComplete = bookingsByUser
                     .stream()
                     .anyMatch(b -> b.getStatus() == BookingStatus.CONFIRMED);
             if (!hasComplete) {
-                throw new IllegalStateException("You can only rate agencies if you have completed a booking");
+                throw new DoNotMatchException("You can only rate agencies if you have completed a booking");
             }
         }
-    }
-
-    private void validateStars(Integer stars) {
-        if (stars == null || stars < 1 || stars > 5) {
-            throw new DoNotMatchException("Stars must be between 1 and 5");
-        }
-    }
-
-    private boolean existsByUserIdAndSourceIdAndType(
-            Long userId, Long sourceId, RatingType target) {
-        return findByUserIdAndSourceIdAndType(userId, sourceId, target).isPresent();
     }
 }

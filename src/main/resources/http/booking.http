@@ -1,34 +1,34 @@
 ### create booking
-POST localhost:8080/api/v1/booking/create
+POST localhost:8080/api/v1/bookings
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
-  "tourId": 3,
+  "tourId": 1,
   "seatsBooked": 10,
   "note": "To Paris"
 }
 
 ### booking by user
-GET localhost:8080/booking/by-user/4
-X-User-Id: {{userId}}
+GET localhost:8080/api/v1/bookings/all
+Authorization: Bearer {{jwt}}
 
 ### booking by user id ADMIN
-GET localhost:8080/booking/by-user/2
-X-User-Id: {{userId}}
+GET localhost:8080/api/v1/bookings/by-user/2
+Authorization: Bearer {{jwt}}
 
 ### booking by agency id
-GET localhost:8080/booking/by-agency/2
-X-User-Id: {{userId}}
+GET localhost:8080/api/v1/bookings/by-agency/   3
+Authorization: Bearer {{jwt}}
 
 ### cancel booking
-DELETE localhost:8080/api/v1/booking/2
-X-User-Id: {{userId}}
+DELETE localhost:8080/api/v1/api/v1/bookings/2
+Authorization: Bearer {{jwt}}
 
 ### update booking
-PUT localhost:8080/api/v1/booking/1
+PUT localhost:8080/api/v1/bookings/1
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "bookingId": 1,

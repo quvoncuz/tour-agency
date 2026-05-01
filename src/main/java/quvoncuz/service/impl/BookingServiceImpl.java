@@ -17,13 +17,12 @@ import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
+import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.BookingMapper;
-import quvoncuz.repository.AgencyRepository;
-import quvoncuz.repository.BookingRepository;
-import quvoncuz.repository.PaymentRepository;
-import quvoncuz.repository.TourRepository;
+import quvoncuz.repository.*;
 import quvoncuz.service.BookingService;
 import quvoncuz.service.ProfileService;
+import quvoncuz.util.SecurityUtil;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,33 +38,38 @@ public class BookingServiceImpl implements BookingService {
     private final ProfileService profileService;
     private final PaymentRepository paymentRepository;
     private final AgencyRepository agencyRepository;
+    private final ProfileRepository profileRepository;
 
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
-    public BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId) {
+    @Transactional
+    public BookingFullInfo createBooking(CreateBookingRequestDTO dto) {
+
+        long userId = SecurityUtil.getCurrentUserId();
+
         if (bookingRepository.existsByTourIdAndUserIdAndStatusIsNot(dto.getTourId(), userId, BookingStatus.CANCELED)) {
             throw new AlreadyExistsException("Booking already exists for tourId: " + dto.getTourId() + " and userId: " + userId);
         }
 
         ProfileEntity profile = profileService.findById(userId);
 
-        TourEntity tour = tourRepository.findById(dto.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found!"));
+        TourEntity tour = tourRepository.findById(dto.getTourId())
+                .orElseThrow(() -> new NotFoundException("Tour not found!"));
 
         if (!tour.getStatus().equals(TourStatus.ACTIVE)) {
-            throw new IllegalArgumentException("Tour is not active for tourId: " + dto.getTourId());
+            throw new DoNotMatchException("Tour is not active");
         }
 
         if (!profile.getIsActive()) {
-            throw new IllegalArgumentException("User profile is not active for userId: " + userId);
+            throw new DoNotMatchException("User is not active");
         }
 
         if (tour.getAvailableSeats() < dto.getSeatsBooked()) {
-            throw new IllegalArgumentException("Not enough available seats for tourId: " + dto.getTourId());
+            throw new DoNotMatchException("Not enough available seats");
         }
 
         if (!tour.getIsActive()) {
-            throw new IllegalArgumentException("Tour is not active for tourId: " + dto.getTourId());
+            throw new DoNotMatchException("Tour is not active");
         }
 
         tour.setAvailableSeats(tour.getAvailableSeats() - dto.getSeatsBooked());
@@ -86,85 +90,178 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByUserId(Long userId, Long loginId, int page, int size) {
+    @Transactional(readOnly = true)
+    public Page<BookingShortInfo> findAllByUserId(Long userId, int page, int size) {
+        long loginId = SecurityUtil.getCurrentUserId();
         ProfileEntity profile = profileService.findById(loginId);
-        if (profile.getRole() != Role.ADMIN && !loginId.equals(userId)) {
-            throw new IllegalArgumentException("You don't have permission to view bookings for this user. userId: " + userId + ", loginId: " + loginId);
+        if (profile.getRole() != Role.ADMIN && loginId != userId) {
+            throw new DoNotMatchException("You don't have permission");
         }
         PageRequest pageRequest = PageRequest.of(page - 1, size);
+
         Page<BookingEntity> pageResult = bookingRepository.findAll(pageRequest);
-        logger.info("Finding all bookings for userId: {} with pagination - page: {}, size: {}", userId, page, size);
-        return pageResult.map(BookingMapper::toShortInfo);
+        logger.info("finding all bookings for userId: {}", userId);
+        return pageResult
+                .map(BookingMapper::toShortInfo);
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByTourId(Long tourId, Long loginId, int page, int size) {
-        logger.info("Finding all bookings for tourId: {} with pagination - page: {}, size: {}", tourId, page, size);
-        ProfileEntity profile = profileService.findById(loginId);
+    @Transactional(readOnly = true)
+    public Page<BookingShortInfo> findAllByTourId(Long tourId, int page, int size) {
+        long userId = SecurityUtil.getCurrentUserId();
+
+        logger.info("Finding all bookings for tourId: {}", tourId);
+        ProfileEntity profile = profileService.findById(userId);
+
         PageRequest pageRequest = PageRequest.of(page - 1, size);
+
         Page<BookingEntity> pageResult = bookingRepository.findAllByTourId(tourId, pageRequest);
         if (profile.getRole() == Role.ADMIN) {
-            return pageResult.map(BookingMapper::toShortInfo);
+            return pageResult
+                    .map(BookingMapper::toShortInfo);
         } else if (profile.getRole() == Role.AGENCY) {
-            TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
-            if (tour.getAgency().getId().equals(loginId)) {
-                return pageResult.map(BookingMapper::toShortInfo);
+            TourEntity tour = tourRepository.findById(tourId)
+                    .orElseThrow(() -> new NotFoundException("Tour not found"));
+            if (tour.getAgencyId().equals(userId)) {
+                return pageResult
+                        .map(BookingMapper::toShortInfo);
             } else throw new DoNotMatchException("You don't have permission");
         } else {
-            List<BookingShortInfo> content = pageResult.getContent()
-                    .stream()
-                    .filter(bookingEntity -> bookingEntity.getUserId().equals(loginId))
+            List<BookingShortInfo> list = pageResult
+                    .filter(bookingEntity -> bookingEntity.getUserId().equals(userId))
                     .map(BookingMapper::toShortInfo)
                     .toList();
-            return new PageImpl<>(content, pageRequest, pageResult.getTotalElements());
+            return new PageImpl<>(list, pageRequest, list.size());
         }
     }
 
     @Override
-    public Page<BookingShortInfo> findAllByAgencyId(Long agencyId, Long loginId, int page, int size) {
-        ProfileEntity profile = profileService.findById(loginId);
+    @Transactional(readOnly = true)
+    public Page<BookingShortInfo> findAllByAgencyId(Long agencyId, int page, int size) {
+        long userId = SecurityUtil.getCurrentUserId();
+        ProfileEntity profile = profileService.findById(userId);
         AgencyEntity agency = agencyRepository.findById(agencyId)
                 .orElseThrow(() -> new NotFoundException("Agency not found"));
 
-        if (!(agency.getOwnerId().equals(loginId) || profile.getRole().equals(Role.ADMIN))) {
-            throw new IllegalArgumentException("Only the agency owner or admin can view bookings for this agency. agencyId: " + agencyId + ", loginId: " + loginId);
+        if (!(agency.getOwnerId().equals(userId) || profile.getRole().equals(Role.ADMIN))) {
+            throw new PermissionDeniedException("You don't have permission");
         }
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
-        List<Long> tourByAgencyId = tourRepository.findAllByAgencyId(agencyId)
+
+        List<Long> tourByAgencyId = tourRepository.findAllByAgencyId(agencyId, pageRequest)
+                .getContent()
                 .stream()
                 .map(TourEntity::getId)
                 .toList();
-        logger.info("Finding all bookings for agencyId: {} with pagination - page: {}, size: {}", loginId, page, size);
-        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, pageRequest).map(BookingMapper::toShortInfo);
+        logger.info("Finding all bookings for agencyId: {}", userId);
+        return bookingRepository.findAllByTourIdIsIn(tourByAgencyId, pageRequest)
+                .map(BookingMapper::toShortInfo);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean cancelBooking(CancelBookingRequestDTO dto, Long userId) {
-        BookingEntity booking = findById(dto.getBookingId());
+    @Transactional
+    public BookingFullInfo confirmUpdatedBooking(Long bookingId) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        ProfileEntity profile = profileService.findById(userId);
+        BookingEntity booking = findEntityById(bookingId);
 
-        TourEntity tour = tourRepository.findById(booking.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found"));
+        if (booking.getStatus() != BookingStatus.ON_UPDATE) {
+            throw new DoNotMatchException("Booking is not on update");
+        }
+
+        if (profile.getRole() != Role.USER && !booking.getUserId().equals(userId)) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        if (!profile.getIsActive()) {
+            throw new DoNotMatchException("User is not active");
+        }
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        booking.setStatus(BookingStatus.PENDING);
+
+        paymentRepository.findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, booking.getTourId(), bookingId, PaymentStatus.PENDING)
+                .ifPresentOrElse(payment -> {
+                    payment.setAmount(booking.getTotalPrice() - booking.getPaidAmount());
+                    paymentRepository.save(payment);
+                }, () -> {
+                    throw new NotFoundException("Payment not found");
+                });
+
+        return BookingMapper.toFullInfo(booking);
+    }
+
+    @Override
+    @Transactional
+    public BookingFullInfo cancelUpdateBooking(Long bookingId) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+
+        ProfileEntity profile = profileService.findById(userId);
+        BookingEntity booking = findEntityById(bookingId);
+
+        if (booking.getStatus() != BookingStatus.ON_UPDATE) {
+            throw new DoNotMatchException("Booking is not on update");
+        }
+
+        if (profile.getRole() != Role.USER && !booking.getUserId().equals(userId)) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        if (!profile.getIsActive()) {
+            throw new DoNotMatchException("User is not active");
+        }
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        booking.setStatus(BookingStatus.CANCELED);
+
+        paymentRepository.findByUserIdAndTourIdAndBookingIdAndStatusIs(userId, booking.getTourId(), bookingId, PaymentStatus.PENDING)
+                .ifPresentOrElse(payment -> {
+                    payment.setStatus(PaymentStatus.FAILED);
+                    paymentRepository.save(payment);
+                }, () -> {
+                    throw new NotFoundException("Payment not found");
+                });
+
+        return BookingMapper.toFullInfo(booking);
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelBooking(CancelBookingRequestDTO dto) {
+
+        long userId = SecurityUtil.getCurrentUserId();
+
+        BookingEntity booking = findEntityById(dto.getBookingId());
+
+        TourEntity tour = tourRepository.findById(booking.getTourId())
+                .orElseThrow(() -> new NotFoundException("Tour not found"));
 
         List<PaymentEntity> payments = paymentRepository.findByBookingIdAndUserIdOrderByCreatedAtDesc(booking.getId(), userId);
 
         if (LocalDate.now().isEqual(tour.getStartDate()) || LocalDate.now().isAfter(tour.getStartDate())) {
-            throw new IllegalArgumentException("You cannot cancel started tour");
+            throw new DoNotMatchException("You cannot cancel started tour");
         }
 
         if (booking.getStatus() == BookingStatus.CANCELED) {
-            throw new IllegalArgumentException("Booking is already canceled for bookingId: " + dto.getBookingId());
+            throw new AlreadyExistsException("Booking is already canceled");
         }
 
         if (!booking.getUserId().equals(userId)) {
-            throw new DoNotMatchException("You cannot cancel other's tour");
+            throw new DoNotMatchException("You don't have permission");
         }
 
         payments.forEach(payment -> {
             if (payment.getStatus() == PaymentStatus.PAID) {
                 payment.setStatus(PaymentStatus.REFUND);
             } else payment.setStatus(PaymentStatus.FAILED);
-
             payment.setCancelledAt(LocalDateTime.now());
         });
 
@@ -182,31 +279,35 @@ public class BookingServiceImpl implements BookingService {
         return true;
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
-    public BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto, Long userId) {
-        BookingEntity booking = findById(bookingId);
+    @Transactional
+    public BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto) {
+
+        long userId = SecurityUtil.getCurrentUserId();
+
+        BookingEntity booking = findEntityById(bookingId);
 
         if (booking.getStatus() == BookingStatus.CANCELED) {
-            throw new IllegalArgumentException("Cannot update seats for canceled booking for userId: " + userId);
+            throw new DoNotMatchException("Cannot update seats for canceled booking");
         }
 
-        TourEntity tour = tourRepository.findById(booking.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found!"));
+        TourEntity tour = tourRepository.findById(booking.getTourId())
+                .orElseThrow(() -> new NotFoundException("Tour not found!"));
 
         PaymentEntity payment = paymentRepository.findByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, userId).get(0);
 
         if (tour.getStartDate().isBefore(LocalDate.now()) || tour.getStartDate().isEqual(LocalDate.now())) {
-            throw new IllegalArgumentException("You cannot update started tour");
+            throw new DoNotMatchException("You cannot update started tour");
         }
 
         if (tour.getStatus() != TourStatus.ACTIVE) {
-            throw new IllegalArgumentException("Tour is not active for tourId: " + tour.getId());
+            throw new DoNotMatchException("Tour is not active");
         }
 
         int seatsDifference = dto.getSeats() - booking.getSeatsBooked();
 
         if (tour.getAvailableSeats() < seatsDifference) {
-            throw new IllegalArgumentException("Not enough available seats for tourId: " + tour.getId());
+            throw new DoNotMatchException("Not enough available seats");
         }
 
         tour.setAvailableSeats(tour.getAvailableSeats() - seatsDifference);
@@ -220,7 +321,7 @@ public class BookingServiceImpl implements BookingService {
             paymentRepository.save(payment);
         } else {
             if (seatsDifference < 0) {
-                throw new IllegalArgumentException("Cannot reduce the number of seats booked for tourId: " + tour.getId());
+                throw new DoNotMatchException("Cannot reduce the booked seats");
             }
             PaymentEntity newPayment = PaymentEntity.builder()
                     .userId(userId)
@@ -244,10 +345,47 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toFullInfo(booking);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public BookingFullInfo findFullInfoById(long bookingId) {
+        long userId = SecurityUtil.getCurrentUserId();
+        BookingEntity booking = bookingRepository.findByIdAndUserId(bookingId, userId)
+                .orElseThrow(() -> new NotFoundException("Booking not found"));
+        return BookingMapper.toFullInfo(booking);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingFullInfo> getUpdatedBooking() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return bookingRepository.findAllByUserIdAndStatus(userId, BookingStatus.ON_UPDATE)
+                .stream()
+                .map(BookingMapper::toFullInfo)
+                .toList();
+    }
+
+    @Override
+    public Page<BookingShortInfo> findAllByUser(int page, int size) {
+        long userId = SecurityUtil.getCurrentUserId();
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (profile.getRole() == Role.USER) {
+            logger.info("Finding all bookings for userId: {}", userId);
+            Page<BookingEntity> pageResult = bookingRepository.findAllByUserId(userId, pageRequest);
+            return pageResult
+                    .map(BookingMapper::toShortInfo);
+        } else if (profile.getRole() == Role.AGENCY) {
+            Page<BookingEntity> allByAgencyId = bookingRepository.findAllByAgencyId(userId, pageRequest);
+            return allByAgencyId
+                    .map(BookingMapper::toShortInfo);
+        } else throw new DoNotMatchException("You don't have booking");
+    }
+
     private void createPayment(Long bookingId, Long userId) {
-        BookingEntity booking = findById(bookingId);
+        BookingEntity booking = findEntityById(bookingId);
         PaymentEntity payment = PaymentEntity.builder()
-                .id(null)
                 .userId(userId)
                 .tourId(booking.getTourId())
                 .bookingId(bookingId)
@@ -258,7 +396,7 @@ public class BookingServiceImpl implements BookingService {
         paymentRepository.save(payment);
     }
 
-    private BookingEntity findById(Long bookingId) {
+    private BookingEntity findEntityById(long bookingId) {
         return bookingRepository.findById(bookingId).orElseThrow(() -> new NotFoundException("Booking not found"));
     }
 }

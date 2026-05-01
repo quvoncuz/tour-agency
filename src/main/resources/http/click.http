@@ -1,11 +1,11 @@
 ### click post
-POST https://18f55f25ec2670.lhr.life/api/v1/click/pay
+POST localhost:8080/api/v1/click/pay
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
-  "tourId": 3,
-  "bookingId": 3,
+  "tourId": 1,
+  "bookingId": 1,
   "returnUrl": "https://18f55f25ec2670.lhr.life/api/v1/tour/all"
 }
 

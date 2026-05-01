@@ -8,11 +8,13 @@ import quvoncuz.dto.tour.UpdateTourRequestDTO;
 
 public interface TourService {
 
-    TourFullInfo createTour(CreateTourRequestDTO dto, Long ownerId);
+    TourFullInfo createTour(CreateTourRequestDTO dto);
 
-    TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long ownerId);
+    TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto);
 
-    Boolean deleteTour(Long tourId, Long ownerId);
+    TourFullInfo updateTourPrice(Long tourId, Long newPrice);
+
+    Boolean deleteTour(Long tourId);
 
     Page<TourShortInfo> getAllTour(int page, int size);
 
@@ -20,7 +22,7 @@ public interface TourService {
 
     TourFullInfo getById(Long id);
 
-    Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size);
+    Page<TourShortInfo> getAllSavedTours(int page, int size);
 
     Page<TourShortInfo> search(String query, int page, int size);
 }

@@ -1,5 +1,7 @@
 package quvoncuz.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -8,32 +10,29 @@ import quvoncuz.dto.agency.*;
 import quvoncuz.service.AgencyService;
 
 @RestController
-@RequestMapping("/api/v1/agency")
+@RequestMapping("/agencies")
 @RequiredArgsConstructor
 public class AgencyController {
 
     private final AgencyService agencyService;
 
-    @PostMapping("/apply")
+    @PostMapping
     public ResponseEntity<AgencyDTO> applyForAgency(
-            @RequestBody CreateAgencyRequestDTO dto,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(agencyService.applyForAgency(dto, userId));
+            @Valid @RequestBody CreateAgencyRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.applyForAgency(dto));
     }
 
     @PostMapping("/approve")
     public ResponseEntity<Boolean> approveAgency(
-            @RequestBody AgencyApproveRequestDTO dto,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(agencyService.approveAgency(dto, userId));
+            @Valid @RequestBody AgencyApproveRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.approveAgency(dto));
     }
 
     @GetMapping("/pending")
     public ResponseEntity<Page<AgencyShortInfo>> getPendingAgencies(
-            @RequestHeader("X-User-Id") Long userId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(agencyService.getPendingAgencies(userId, page, size));
+        return ResponseEntity.ok(agencyService.getPendingAgencies(page, size));
     }
 
     @GetMapping("/all")
@@ -44,22 +43,20 @@ public class AgencyController {
 
     @PutMapping("/{agencyId}")
     public ResponseEntity<AgencyFullInfo> update(
-            @PathVariable Long agencyId,
-            @RequestBody UpdateAgencyRequestDTO dto,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(agencyService.update(agencyId, dto, userId));
+            @PathVariable @Positive(message = "Id must be positive") long agencyId,
+            @Valid @RequestBody UpdateAgencyRequestDTO dto) {
+        return ResponseEntity.ok(agencyService.update(agencyId, dto));
     }
 
     @DeleteMapping("/{agencyId}")
     public ResponseEntity<Boolean> deleteById(
-            @PathVariable Long agencyId,
-            @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(agencyService.deleteById(agencyId, userId));
+            @PathVariable @Positive(message = "Id must be positive") long agencyId) {
+        return ResponseEntity.ok(agencyService.deleteById(agencyId));
     }
 
     @GetMapping("/{agencyId}")
     public ResponseEntity<AgencyDTO> findById(
-            @PathVariable Long agencyId) {
+            @PathVariable @Positive(message = "Id must be positive") long agencyId) {
         return ResponseEntity.ok(agencyService.findByAgencyId(agencyId));
     }
 }

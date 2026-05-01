@@ -1,9 +1,12 @@
 package quvoncuz.dto.booking;
 
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 public class UpdateBookingRequestDTO {
-    private Long bookingId;
-    private Integer seats;
+    @Positive(message = "Booking id is invalid")
+    private long bookingId;
+    @Positive(message = "Seats must be positive")
+    private int seats;
 }

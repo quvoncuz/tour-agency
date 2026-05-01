@@ -3,9 +3,9 @@ POST localhost:8080/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "fullName": "quvonc",
-  "username": "quvonc",
-  "email": "quvonc@hbfav.uz",
+  "fullName": "quvon",
+  "username": "quvon",
+  "email": "quvon@hbfav.uz",
   "password": "123",
   "gender": "MALE"
 }
@@ -19,7 +19,7 @@ Content-Type: application/json
   "password": "123"
 }
 
-> {% client.global.set("userId", response.body.id); %}
+> {% client.global.set("jwt", response.body.token); %}
 
 ### login user
 POST localhost:8080/api/v1/auth/login
@@ -30,7 +30,7 @@ Content-Type: application/json
   "password": "123"
 }
 
-> {% client.global.set("userId", response.body.id); %}
+> {% client.global.set("jwt", response.body.token); %}
 
 ### login admin
 POST localhost:8080/api/v1/auth/login
@@ -41,4 +41,4 @@ Content-Type: application/json
   "password": "Admin123"
 }
 
-> {% client.global.set("userId", response.body.id); %}
+> {% client.global.set("jwt", response.body.token); %}
