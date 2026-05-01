@@ -1,7 +1,7 @@
 ### apply agency
 POST localhost:8080/api/v1/agencies
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "name": "TOUR.UZ",
@@ -15,7 +15,7 @@ X-User-Id: {{userId}}
 ### approve agency
 POST localhost:8080/api/v1/agencies/approve
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "agencyId": 2,
@@ -24,15 +24,15 @@ X-User-Id: {{userId}}
 
 ### pending agencies
 GET localhost:8080/api/v1/agencies/pending
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 ### all agencies
 GET localhost:8080/api/v1/agencies/all
 
 ### update agency
-PUT localhost:8080/api/v1/agencies/1
+PUT localhost:8080/api/v1/agencies/3
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "name": "EURO PASS",
@@ -48,5 +48,5 @@ GET localhost:8080/api/v1/agencies/3
 
 ### delete by id
 DELETE localhost:8080/api/v1/agencies/1
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 

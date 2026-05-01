@@ -22,6 +22,8 @@ public interface RatingService {
 
     Page<RatingShortInfo> findByUserId(Long userId, int page, int size);
 
+    Page<RatingShortInfo> findOwnRatings(int page, int size);
+
     Optional<RatingEntity> findByUserIdAndSourceIdAndType(
             Long userId, Long sourceId, RatingType type);
 

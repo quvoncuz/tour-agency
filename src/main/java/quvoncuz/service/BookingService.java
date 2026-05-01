@@ -15,15 +15,17 @@ public interface BookingService {
 
     Page<BookingShortInfo> findAllByAgencyId(Long userId, int page, int size);
 
-    BookingFullInfo confirmUpdatedBooking(Long bookingId, Long userId);
+    BookingFullInfo confirmUpdatedBooking(Long bookingId);
 
-    BookingFullInfo cancelUpdateBooking(Long bookingId, Long userId);
+    BookingFullInfo cancelUpdateBooking(Long bookingId);
 
     boolean cancelBooking(CancelBookingRequestDTO dto);
 
     BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto);
 
-    BookingFullInfo findById(long bookingId);
+    BookingFullInfo findFullInfoById(long bookingId);
 
-    List<BookingFullInfo> getUpdatedBooking(long userId);
+    List<BookingFullInfo> getUpdatedBooking();
+
+    Page<BookingShortInfo> findAllByUser(int page, int size);
 }

@@ -90,7 +90,7 @@ public class AgencyServiceImpl implements AgencyService {
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        Page<AgencyEntity> pageResult = agencyRepository.findAll(pageRequest);
+        Page<AgencyEntity> pageResult = agencyRepository.findAllByStatus(AgencyStatus.PENDING, pageRequest);
         return pageResult
                 .map(AgencyMapper::toShortInfo);
     }

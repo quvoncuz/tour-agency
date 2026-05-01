@@ -38,4 +38,9 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     List<BookingEntity> findAllByTourIdAndStatus(Long tourId, BookingStatus bookingStatus);
 
     List<BookingEntity> findAllByUserIdAndStatus(Long userId, BookingStatus status);
+
+    Page<BookingEntity> findAllByUserId(Long userId, Pageable pageable);
+
+    @Query("from BookingEntity as b where b.tour.agencyId = ?1 order by b.bookedAt desc ")
+    Page<BookingEntity> findAllByAgencyId(long userId, Pageable pageable);
 }

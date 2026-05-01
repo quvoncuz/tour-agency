@@ -12,9 +12,11 @@ import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.RatingShortInfo;
 import quvoncuz.dto.rating.UpdateRatingRequestDTO;
 import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.ProfileEntity;
 import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.RatingType;
+import quvoncuz.enums.Role;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -23,6 +25,7 @@ import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.RatingRepository;
 import quvoncuz.repository.TourRepository;
+import quvoncuz.service.ProfileService;
 import quvoncuz.service.RatingService;
 import quvoncuz.util.SecurityUtil;
 
@@ -40,6 +43,7 @@ public class RatingServiceImpl implements RatingService {
     private final BookingRepository bookingRepository;
     private final AgencyRepository agencyRepository;
     private final TourRepository tourRepository;
+    private final ProfileService profileService;
 
     @Override
     @Transactional
@@ -101,6 +105,28 @@ public class RatingServiceImpl implements RatingService {
     @Override
     @Transactional(readOnly = true)
     public Page<RatingShortInfo> findByUserId(Long userId, int page, int size) {
+
+        long loginId = SecurityUtil.getCurrentUserId();
+
+        ProfileEntity profile = profileService.findById(loginId);
+
+        if (profile.getRole() != Role.ADMIN) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        logger.info("Finding ratings for user {}", userId);
+
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        return ratingRepository.findAllByUserId(userId, pageRequest)
+                .map(RatingMapper::toShortInfo);
+    }
+
+    @Override
+    public Page<RatingShortInfo> findOwnRatings(int page, int size) {
+
+        long userId = SecurityUtil.getCurrentUserId();
+
         logger.info("Finding ratings for user {}", userId);
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);

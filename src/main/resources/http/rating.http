@@ -1,7 +1,7 @@
 ### create rating
 POST localhost:8080/api/v1/ratings
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "sourceId": 4,
@@ -13,7 +13,7 @@ X-User-Id: {{userId}}
 ### update rating
 PUT localhost:8080/api/v1/ratings/1
 Content-Type: application/json
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 {
   "stars": 5,
@@ -22,11 +22,16 @@ X-User-Id: {{userId}}
 
 ### delete rating
 DELETE localhost:8080/api/v1/ratings/1
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
 ### find by sourceId and type
 GET localhost:8080/api/v1/ratings/1?type=TOUR
-X-User-Id: {{userId}}
+Authorization: Bearer {{jwt}}
 
-### find by user id
-GET localhost:8080/api/v1/ratings/?userId=1
+### find by user own
+GET localhost:8080/api/v1/ratings/all
+Authorization: Bearer {{jwt}}
+
+### find by user own
+GET localhost:8080/api/v1/ratings/by-user?userId=2
+Authorization: Bearer {{jwt}}

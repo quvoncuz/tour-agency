@@ -6,21 +6,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import quvoncuz.security.CustomUserDetailsService;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import quvoncuz.security.jwt.JwtAuthenticationFilter;
+import quvoncuz.security.jwt.JwtUtil;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService customUserDetailsService;
+    private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public static final String[] WHITE_LIST = {
             "/tours/**",
@@ -30,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(customUserDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
@@ -41,36 +44,45 @@ public class SecurityConfig {
         http.cors(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, WHITE_LIST).permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
 
-                .requestMatchers("/click/prepare", "/click/complete").permitAll()
-
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**"
-                        , "/swagger-ui.html").permitAll()
-
-                .requestMatchers("/agencies/pending","/profiles/all"
-                        , "/agencies/approve", "/payments/all/refund"
-                        , "/admin/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST, "/tours/**").hasRole("AGENCY")
+                .requestMatchers(HttpMethod.POST, "/tours").hasRole("AGENCY")
                 .requestMatchers(HttpMethod.PUT, "/tours/**").hasRole("AGENCY")
-                .requestMatchers(HttpMethod.DELETE, "/tours/**", "/profiles/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/tours/*").hasRole("AGENCY")
+                .requestMatchers(HttpMethod.GET, "/tours/all", "/tours/*").permitAll()
 
                 .requestMatchers(HttpMethod.POST, "/agencies").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/agencies/approve").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/agencies").hasRole("AGENCY")
+                .requestMatchers(HttpMethod.DELETE, "/agencies").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/agencies/pending").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/agencies/all", "/agencies/*").permitAll()
 
-                .requestMatchers("/click/pay").authenticated()
+                .requestMatchers(HttpMethod.POST, "/bookings").hasAnyRole("USER", "AGENCY")
+                .requestMatchers(HttpMethod.PUT, "/bookings/*").hasAnyRole("USER", "AGENCY")
+                .requestMatchers(HttpMethod.GET, "/bookings/all").hasAnyRole("AGENCY", "USER")
+                .requestMatchers(HttpMethod.GET, "/bookings/by-user/*", "/bookings/by-agency/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/bookings/*").hasAnyRole("AGENCY", "USER")
 
-                .requestMatchers("/saved-tours/**").authenticated()
-                .requestMatchers("/bookings/**").authenticated()
-                .requestMatchers("/payments/**").authenticated()
-                .requestMatchers("/profiles/**").authenticated()
-                .requestMatchers("/ratings/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/click/pay").hasRole("USER")
+                .requestMatchers(HttpMethod.POST, "/click/prepare", "/click/complete").permitAll()
+
+                .requestMatchers("/payments/**", "/profiles/**").hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.POST, "/ratings").hasRole("USER")
+                .requestMatchers(HttpMethod.PUT, "/ratings/*").hasRole("USER")
+                .requestMatchers(HttpMethod.DELETE, "/ratings/*").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
 
                 .anyRequest().authenticated()
         );
 
-        http.httpBasic(Customizer.withDefaults());
+//        http.httpBasic(Customizer.withDefaults());
+
+        http.addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }

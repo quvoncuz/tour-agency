@@ -19,10 +19,7 @@ import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.BookingMapper;
-import quvoncuz.repository.AgencyRepository;
-import quvoncuz.repository.BookingRepository;
-import quvoncuz.repository.PaymentRepository;
-import quvoncuz.repository.TourRepository;
+import quvoncuz.repository.*;
 import quvoncuz.service.BookingService;
 import quvoncuz.service.ProfileService;
 import quvoncuz.util.SecurityUtil;
@@ -41,6 +38,7 @@ public class BookingServiceImpl implements BookingService {
     private final ProfileService profileService;
     private final PaymentRepository paymentRepository;
     private final AgencyRepository agencyRepository;
+    private final ProfileRepository profileRepository;
 
 
     @Override
@@ -102,7 +100,7 @@ public class BookingServiceImpl implements BookingService {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
         Page<BookingEntity> pageResult = bookingRepository.findAll(pageRequest);
-        logger.info("Finding all bookings for userId: {}", userId);
+        logger.info("finding all bookings for userId: {}", userId);
         return pageResult
                 .map(BookingMapper::toShortInfo);
     }
@@ -163,9 +161,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingFullInfo confirmUpdatedBooking(Long bookingId, Long userId) {
+    public BookingFullInfo confirmUpdatedBooking(Long bookingId) {
+        Long userId = SecurityUtil.getCurrentUserId();
         ProfileEntity profile = profileService.findById(userId);
-        BookingEntity booking = findById(bookingId);
+        BookingEntity booking = findEntityById(bookingId);
 
         if (booking.getStatus() != BookingStatus.ON_UPDATE) {
             throw new DoNotMatchException("Booking is not on update");
@@ -198,9 +197,12 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingFullInfo cancelUpdateBooking(Long bookingId, Long userId) {
+    public BookingFullInfo cancelUpdateBooking(Long bookingId) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+
         ProfileEntity profile = profileService.findById(userId);
-        BookingEntity booking = findById(bookingId);
+        BookingEntity booking = findEntityById(bookingId);
 
         if (booking.getStatus() != BookingStatus.ON_UPDATE) {
             throw new DoNotMatchException("Booking is not on update");
@@ -237,7 +239,7 @@ public class BookingServiceImpl implements BookingService {
 
         long userId = SecurityUtil.getCurrentUserId();
 
-        BookingEntity booking = findById(dto.getBookingId());
+        BookingEntity booking = findEntityById(dto.getBookingId());
 
         TourEntity tour = tourRepository.findById(booking.getTourId())
                 .orElseThrow(() -> new NotFoundException("Tour not found"));
@@ -283,7 +285,7 @@ public class BookingServiceImpl implements BookingService {
 
         long userId = SecurityUtil.getCurrentUserId();
 
-        BookingEntity booking = findById(bookingId);
+        BookingEntity booking = findEntityById(bookingId);
 
         if (booking.getStatus() == BookingStatus.CANCELED) {
             throw new DoNotMatchException("Cannot update seats for canceled booking");
@@ -343,9 +345,9 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toFullInfo(booking);
     }
 
-    @Override
     @Transactional(readOnly = true)
-    public BookingFullInfo findById(long bookingId) {
+    @Override
+    public BookingFullInfo findFullInfoById(long bookingId) {
         long userId = SecurityUtil.getCurrentUserId();
         BookingEntity booking = bookingRepository.findByIdAndUserId(bookingId, userId)
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
@@ -354,15 +356,35 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingFullInfo> getUpdatedBooking(long userId) {
+    public List<BookingFullInfo> getUpdatedBooking() {
+        Long userId = SecurityUtil.getCurrentUserId();
         return bookingRepository.findAllByUserIdAndStatus(userId, BookingStatus.ON_UPDATE)
                 .stream()
                 .map(BookingMapper::toFullInfo)
                 .toList();
     }
 
+    @Override
+    public Page<BookingShortInfo> findAllByUser(int page, int size) {
+        long userId = SecurityUtil.getCurrentUserId();
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (profile.getRole() == Role.USER) {
+            logger.info("Finding all bookings for userId: {}", userId);
+            Page<BookingEntity> pageResult = bookingRepository.findAllByUserId(userId, pageRequest);
+            return pageResult
+                    .map(BookingMapper::toShortInfo);
+        } else if (profile.getRole() == Role.AGENCY) {
+            Page<BookingEntity> allByAgencyId = bookingRepository.findAllByAgencyId(userId, pageRequest);
+            return allByAgencyId
+                    .map(BookingMapper::toShortInfo);
+        } else throw new DoNotMatchException("You don't have booking");
+    }
+
     private void createPayment(Long bookingId, Long userId) {
-        BookingEntity booking = findById(bookingId);
+        BookingEntity booking = findEntityById(bookingId);
         PaymentEntity payment = PaymentEntity.builder()
                 .userId(userId)
                 .tourId(booking.getTourId())
@@ -374,7 +396,7 @@ public class BookingServiceImpl implements BookingService {
         paymentRepository.save(payment);
     }
 
-    private BookingEntity findById(Long bookingId) {
+    private BookingEntity findEntityById(long bookingId) {
         return bookingRepository.findById(bookingId).orElseThrow(() -> new NotFoundException("Booking not found"));
     }
 }

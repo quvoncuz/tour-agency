@@ -1,11 +1,14 @@
 package quvoncuz.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.entities.AgencyEntity;
+import quvoncuz.enums.AgencyStatus;
 
 import java.util.Optional;
 
@@ -18,4 +21,6 @@ public interface AgencyRepository extends JpaRepository<AgencyEntity, Long> {
     @Transactional
     @Query("update AgencyEntity a set a.rating = ?1 where a.id = ?2")
     void updateRating(double averageRating, Long agencyId);
+
+    Page<AgencyEntity> findAllByStatus(AgencyStatus status, Pageable pageable);
 }
