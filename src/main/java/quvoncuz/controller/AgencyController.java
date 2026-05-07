@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.agency.*;
 import quvoncuz.service.AgencyService;
@@ -16,18 +17,21 @@ public class AgencyController {
 
     private final AgencyService agencyService;
 
+    @PreAuthorize("hasRole('USER')")
     @PostMapping
     public ResponseEntity<AgencyDTO> applyForAgency(
             @Valid @RequestBody CreateAgencyRequestDTO dto) {
         return ResponseEntity.ok(agencyService.applyForAgency(dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/approve")
     public ResponseEntity<Boolean> approveAgency(
             @Valid @RequestBody AgencyApproveRequestDTO dto) {
         return ResponseEntity.ok(agencyService.approveAgency(dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/pending")
     public ResponseEntity<Page<AgencyShortInfo>> getPendingAgencies(
             @RequestParam(defaultValue = "1") int page,
@@ -35,12 +39,14 @@ public class AgencyController {
         return ResponseEntity.ok(agencyService.getPendingAgencies(page, size));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<Page<AgencyFullInfo>> getAllAgencies(@RequestParam(defaultValue = "1") int page,
                                                                @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(agencyService.getAllAgencies(page, size));
     }
 
+    @PreAuthorize("hasRole('AGENCY')")
     @PutMapping("/{agencyId}")
     public ResponseEntity<AgencyFullInfo> update(
             @PathVariable @Positive(message = "Id must be positive") long agencyId,
@@ -48,12 +54,14 @@ public class AgencyController {
         return ResponseEntity.ok(agencyService.update(agencyId, dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{agencyId}")
     public ResponseEntity<Boolean> deleteById(
             @PathVariable @Positive(message = "Id must be positive") long agencyId) {
         return ResponseEntity.ok(agencyService.deleteById(agencyId));
     }
 
+    @PreAuthorize("permitAll()")
     @GetMapping("/{agencyId}")
     public ResponseEntity<AgencyDTO> findById(
             @PathVariable @Positive(message = "Id must be positive") long agencyId) {

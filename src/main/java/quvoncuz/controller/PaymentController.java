@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.payment.PaymentShortInfo;
 import quvoncuz.service.PaymentService;
@@ -15,6 +16,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping({"/all/refund", "/all/refund/"})
     public ResponseEntity<Page<PaymentShortInfo>> findAllByRefund(
             @RequestParam(defaultValue = "1") int page,
@@ -22,6 +24,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.findAllByRefund(page, size));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<Page<PaymentShortInfo>> findAll(
             @RequestParam(defaultValue = "1") int page,
@@ -29,6 +32,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.findAll(page, size));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @GetMapping("/by-user")
     public ResponseEntity<Page<PaymentShortInfo>> findAllByUserId(
             @RequestParam(defaultValue = "1") int page,
@@ -36,6 +40,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.findAllByUserId(page, size));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-tour")
     public ResponseEntity<Page<PaymentShortInfo>> findAllByTourId(
             @RequestParam @Positive(message = "Id must be positive") long tourId,

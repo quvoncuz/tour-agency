@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.tour.SaveTourRequestDTO;
 import quvoncuz.dto.tour.TourShortInfo;
@@ -16,12 +17,14 @@ public class SavedTourController {
 
     private final SavedTourService savedTourService;
 
+    @PreAuthorize("permitAll()")
     @PostMapping
     public ResponseEntity<Boolean> saveTour(
             @Valid @RequestBody SaveTourRequestDTO dto) {
         return ResponseEntity.ok(savedTourService.saveTour(dto));
     }
 
+    @PreAuthorize("permitAll()")
     @GetMapping
     public ResponseEntity<Page<TourShortInfo>> getAllSavedTours(
             @RequestParam(defaultValue = "1") int page,

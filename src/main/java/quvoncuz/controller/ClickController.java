@@ -3,6 +3,7 @@ package quvoncuz.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.click.ClickResponse;
 import quvoncuz.dto.click.CompleteRequest;
@@ -18,6 +19,7 @@ public class ClickController {
 
     private final ClickService clickService;
 
+    @PreAuthorize("hasAnyRole('AGENCY', 'USER')")
     @PostMapping("/pay")
     public ResponseEntity<PaymentResponse> pay(
             @Valid @RequestBody PaymentRequestDTO request) {
