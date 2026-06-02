@@ -7,11 +7,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
+import quvoncuz.enums.EventType;
 import quvoncuz.enums.Role;
+import quvoncuz.events.NotificationEvent;
+import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.producer.EventPublisher;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -22,6 +27,8 @@ import quvoncuz.repository.ProfileRepository;
 import quvoncuz.service.AgencyService;
 import quvoncuz.util.SecurityUtil;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,6 +38,7 @@ public class AgencyServiceImpl implements AgencyService {
     private final Logger logger = LoggerFactory.getLogger(AgencyServiceImpl.class);
     private final ProfileRepository profileRepository;
     private final AgencyRepository agencyRepository;
+    private final EventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -75,8 +83,26 @@ public class AgencyServiceImpl implements AgencyService {
             agency.setStatus(AgencyStatus.ACCEPTED);
             agency.setApproved(true);
             profileRepository.save(profile);
+
+            eventPublisher.publishNotification(RabbitMQConfig.AGENCY_APPROVED,
+                    NotificationEvent.builder()
+                            .entityId(agency.getId())
+                            .eventType(EventType.AGENCY_APPROVED)
+                            .subjectName(agency.getName())
+                            .mails(List.of(agency.getEmail()))
+                            .dateTime(LocalDateTime.now())
+                            .build());
+
+            eventPublisher.publishStatistics(RabbitMQConfig.AGENCY_CREATED,
+                    StatisticsEvent.builder()
+                            .entityId(agency.getId())
+                            .eventType(EventType.AGENCY_CREATED)
+                            .dateTime(LocalDateTime.now())
+                            .build());
+
         } else {
             agency.setStatus(AgencyStatus.REJECTED);
+            agency.setApproved(false);
         }
         agencyRepository.save(agency);
         logger.info("Agency with id {}", dto.getApprove() ? "approved" : "rejected");

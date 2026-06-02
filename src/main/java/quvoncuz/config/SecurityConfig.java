@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
-        http.cors(AbstractHttpConfigurer::disable);
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -61,7 +61,7 @@ public class SecurityConfig {
         return request -> {
             var cors = new CorsConfiguration();
             cors.setAllowedOrigins(java.util.List.of("*"));
-            cors.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            cors.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE"));
             cors.setAllowedHeaders(java.util.List.of("Content-Type", "Authorization"));
             return cors;
         };

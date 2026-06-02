@@ -5,14 +5,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.TourShortInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
 import quvoncuz.entities.*;
-import quvoncuz.enums.AgencyStatus;
-import quvoncuz.enums.BookingStatus;
-import quvoncuz.enums.Role;
+import quvoncuz.enums.*;
+import quvoncuz.events.NotificationEvent;
+import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.producer.EventPublisher;
 import quvoncuz.exceptions.InvalidException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -22,11 +24,11 @@ import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.AgencyService;
-import quvoncuz.service.NotificationService;
 import quvoncuz.service.ProfileService;
 import quvoncuz.service.TourService;
 import quvoncuz.util.SecurityUtil;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -39,7 +41,7 @@ public class TourServiceImpl implements TourService {
     private final AgencyService agencyService;
     private final BookingRepository bookingRepository;
     private final ProfileService profileService;
-    private final NotificationService notificationService;
+    private final EventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -55,6 +57,24 @@ public class TourServiceImpl implements TourService {
         tour.setAgencyId(agency.getId());
 
         tour = tourRepository.save(tour);
+
+        List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
+
+        eventPublisher.publishNotification(RabbitMQConfig.NOTIFICATION_TOUR_CREATED, NotificationEvent.builder()
+                .entityId(tour.getId())
+                .eventType(EventType.TOUR_CREATED)
+                .subjectName(tour.getTitle())
+                .mails(allUserEmailBookedByAgency)
+                .dateTime(LocalDateTime.now())
+                .build());
+
+        eventPublisher.publishStatistics(RabbitMQConfig.STATISTICS_TOUR_CREATED, StatisticsEvent.builder()
+                .entityId(tour.getId())
+                .superId(tour.getAgencyId())
+                .eventType(EventType.TOUR_CREATED)
+                .dateTime(LocalDateTime.now())
+                .build());
+
         return TourMapper.toFullInfo(tour);
     }
 
@@ -93,7 +113,7 @@ public class TourServiceImpl implements TourService {
         if (!tour.getAgency().getOwner().getId().equals(userId)) {
             throw new PermissionDeniedException("You don't have permission");
         }
-        Long old = tour.getPrice();
+
         if (newPrice.equals(tour.getPrice())) {
             throw new InvalidException("Change the value");
         }
@@ -102,13 +122,54 @@ public class TourServiceImpl implements TourService {
             Integer seatsBooked = booking.getSeatsBooked();
             booking.setTotalPrice(seatsBooked * newPrice);
             booking.setStatus(BookingStatus.ON_UPDATE);
-
-            notificationService.sendNotificationForTourUpdate(booking.getUser().getEmail(), tour.getTitle(), old, tour.getPrice());
         });
+
+        List<String> allEmailByTourIdAndStatus = bookingRepository.findAllEmailByTourIdAndStatus(tourId, BookingStatus.PENDING);
 
         bookingRepository.saveAll(bookings);
 
+        eventPublisher.publishNotification(RabbitMQConfig.TOUR_UPDATED, NotificationEvent.builder()
+                .entityId(tour.getId())
+                .eventType(EventType.TOUR_UPDATED)
+                .subjectName(tour.getTitle())
+                .mails(allEmailByTourIdAndStatus)
+                .dateTime(LocalDateTime.now())
+                .build());
         return TourMapper.toFullInfo(tour);
+    }
+
+    @Override
+    @Transactional
+    public Boolean cancelTour(Long tourId, String reason) {
+        Long ownerId = SecurityUtil.getCurrentUserId();
+        Long agencyId = agencyService.findByOwnerId(ownerId)
+                .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
+        TourEntity tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new NotFoundException("Tour not found"));
+
+        tour.setStatus(TourStatus.CANCELLED);
+        tour.setIsActive(false);
+
+        List<BookingEntity> bookings = bookingRepository.findAllByTourId(tourId);
+        bookings.forEach(booking -> booking.setStatus(BookingStatus.CANCELED));
+
+        List<String> mails = bookings.stream()
+                .map(booking -> booking.getUser().getEmail())
+                .toList();
+
+        bookingRepository.saveAll(bookings);
+
+        tourRepository.save(tour);
+
+        eventPublisher.publishNotification(RabbitMQConfig.TOUR_CANCELED, NotificationEvent.builder()
+                .entityId(tour.getId())
+                .eventType(EventType.TOUR_CANCELED)
+                .subjectName(tour.getTitle())
+                .mails(mails)
+                .dateTime(LocalDateTime.now())
+                .build());
+
+        return true;
     }
 
     @Override

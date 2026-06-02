@@ -7,15 +7,21 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.auth.AuthResponse;
 import quvoncuz.dto.auth.LoginRequestDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
+import quvoncuz.enums.EventType;
+import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.producer.EventPublisher;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.security.jwt.JwtUtil;
 import quvoncuz.service.AuthService;
 import quvoncuz.service.ProfileService;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final ProfileRepository profileRepository;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final EventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -45,6 +52,13 @@ public class AuthServiceImpl implements AuthService {
         );
 
         logger.info("New user registered: {}", profile.getUsername());
+
+        eventPublisher.publishStatistics(RabbitMQConfig.USER_REGISTERED,
+                StatisticsEvent.builder()
+                        .entityId(profile.getId())
+                        .eventType(EventType.USER_REGISTERED)
+                        .dateTime(LocalDateTime.now())
+                        .build());
 
         return AuthResponse.builder()
                 .username(profile.getUsername())
