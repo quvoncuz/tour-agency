@@ -20,6 +20,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
 
     Page<BookingEntity> findAllByTourId(Long tourId, Pageable pageable);
 
+    List<BookingEntity> findAllByTourId(Long tourId);
+
     Page<BookingEntity> findAllByTourIdIsIn(List<Long> tourIds, Pageable pageable);
 
     @Modifying

@@ -5,14 +5,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import quvoncuz.dto.tour.*;
 import quvoncuz.entities.*;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.Role;
+import quvoncuz.enums.TourStatus;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.InvalidException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -118,6 +117,33 @@ public class TourServiceImpl implements TourService {
         Long agencyId = agencyService.findByOwnerId(ownerId)
                 .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
         tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public Boolean cancelTour(Long tourId, CancelTourDTO reason) {
+        Long ownerId = SecurityUtil.getCurrentUserId();
+        Long agencyId = agencyService.findByOwnerId(ownerId)
+                .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
+
+        if (!ownerId.equals(agencyId)){
+            throw new DoNotMatchException("You are not owner");
+        }
+
+        TourEntity tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new NotFoundException("Tour not found"));
+
+        tour.setStatus(TourStatus.CANCELLED);
+        tour.setIsActive(false);
+
+        List<BookingEntity> bookings = bookingRepository.findAllByTourId(tourId);
+        bookings.forEach(booking -> booking.setStatus(BookingStatus.CANCELED));
+
+        bookingRepository.saveAll(bookings);
+
+        tourRepository.save(tour);
+
         return true;
     }
 

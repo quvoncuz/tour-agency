@@ -1,10 +1,8 @@
 package quvoncuz.service;
 
 import org.springframework.data.domain.Page;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.dto.tour.*;
 
 public interface TourService {
 
@@ -15,6 +13,8 @@ public interface TourService {
     TourFullInfo updateTourPrice(Long tourId, Long newPrice);
 
     Boolean deleteTour(Long tourId);
+
+    Boolean cancelTour(Long tourId, CancelTourDTO reason);
 
     Page<TourShortInfo> getAllTour(int page, int size);
 

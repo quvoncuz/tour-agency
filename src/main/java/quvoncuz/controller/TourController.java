@@ -7,10 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import quvoncuz.dto.tour.*;
 import quvoncuz.service.TourService;
 
 @RestController
@@ -48,6 +45,14 @@ public class TourController {
     public ResponseEntity<Boolean> delete(
             @PathVariable @Positive(message = "Id must be positive") long tourId) {
         return ResponseEntity.ok(tourService.deleteTour(tourId));
+    }
+
+    @DeleteMapping("/{id}/cancel/")
+    public ResponseEntity<Boolean> cancelTour(
+            @PathVariable long id,
+            @RequestBody @Valid CancelTourDTO dto
+            ){
+        return ResponseEntity.ok(tourService.cancelTour(id, dto));
     }
 
     @PreAuthorize("hasAnyRole('AGENCY', 'ADMIN')")
