@@ -6,15 +6,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.config.RabbitMQConfig;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import quvoncuz.dto.tour.*;
 import quvoncuz.entities.*;
 import quvoncuz.enums.*;
 import quvoncuz.events.NotificationEvent;
 import quvoncuz.events.StatisticsEvent;
 import quvoncuz.events.producer.EventPublisher;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.InvalidException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -140,10 +138,15 @@ public class TourServiceImpl implements TourService {
 
     @Override
     @Transactional
-    public Boolean cancelTour(Long tourId, String reason) {
+    public Boolean cancelTour(Long tourId, CancelTourDTO reason) {
         Long ownerId = SecurityUtil.getCurrentUserId();
         Long agencyId = agencyService.findByOwnerId(ownerId)
                 .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
+
+        if (!ownerId.equals(agencyId)){
+            throw new DoNotMatchException("You are not owner");
+        }
+
         TourEntity tour = tourRepository.findById(tourId)
                 .orElseThrow(() -> new NotFoundException("Tour not found"));
 
