@@ -3,6 +3,7 @@ package quvoncuz.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.config.RabbitMQConfig;
@@ -17,7 +18,6 @@ import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.*;
 import quvoncuz.events.NotificationEvent;
 import quvoncuz.events.StatisticsEvent;
-import quvoncuz.events.producer.EventPublisher;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
@@ -38,6 +38,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ClickService {
 
+    private final ApplicationEventPublisher applicationEventPublisher;
     @Value("${click.service-id}")
     private String serviceId;
 
@@ -50,7 +51,6 @@ public class ClickService {
     @Value("${click.secret-key}")
     private String secretKey;
 
-    private final EventPublisher eventPublisher;
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
@@ -113,7 +113,7 @@ public class ClickService {
             return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchantTransId(), null, request.getClickTransId());
         }
 
-        ClickTransactionEntity transaction = new ClickTransactionEntity();
+        ClickTransactionEntity transaction;
 
 
         Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransIdOrderByCreatedAtDesc(request.getMerchantTransId());
@@ -235,20 +235,25 @@ public class ClickService {
             paymentRepository.save(payment);
             log.info("Bill turned paid status!");
 
-            eventPublisher.publishNotification(RabbitMQConfig.NOTIFICATION_BOOKING_COMPLETED, NotificationEvent.builder()
-                    .entityId(booking.getId())
-                    .eventType(EventType.BOOKING_COMPLETED)
-                    .mails(List.of(booking.getUser().getEmail()))
-                    .subjectName(booking.getTour().getTitle())
-                    .dateTime(LocalDateTime.now())
-                    .build());
+            applicationEventPublisher.publishEvent(
+                    NotificationEvent.builder()
+                            .binding(RabbitMQConfig.NOTIFICATION_BOOKING_COMPLETED)
+                            .entityId(booking.getId())
+                            .eventType(EventType.BOOKING_COMPLETED)
+                            .mails(List.of(booking.getUser().getEmail()))
+                            .subjectName(booking.getTour().getTitle())
+                            .dateTime(LocalDateTime.now())
+                            .build()
+            );
 
-            eventPublisher.publishStatistics(RabbitMQConfig.STATISTICS_BOOKING_COMPLETED, StatisticsEvent.builder()
-                    .entityId(booking.getId())
-                    .superId(booking.getTourId())
-                    .eventType(EventType.BOOKING_COMPLETED)
-                    .dateTime(LocalDateTime.now())
-                    .build());
+            applicationEventPublisher.publishEvent(
+                    StatisticsEvent.builder()
+                            .binding(RabbitMQConfig.STATISTICS_BOOKING_COMPLETED)
+                            .entityId(booking.getId())
+                            .superId(booking.getTourId())
+                            .eventType(EventType.BOOKING_COMPLETED)
+                            .dateTime(LocalDateTime.now())
+                            .build());
 
         } catch (Exception e) {
             log.error(transaction.toString());

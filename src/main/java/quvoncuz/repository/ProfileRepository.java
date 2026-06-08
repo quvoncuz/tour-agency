@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.entities.ProfileEntity;
-import quvoncuz.enums.Role;
 
 import java.util.Optional;
 
@@ -15,12 +14,8 @@ public interface ProfileRepository extends JpaRepository<ProfileEntity, Long> {
 
     Optional<ProfileEntity> findByUsername(String username);
 
-    boolean existsByUsername(String username);
-
-    boolean existsByEmail(String email);
-
     @Modifying
     @Transactional
-    @Query("update ProfileEntity p set p.role = ?1 where p.id = ?2")
-    void updateProfileRole(Role role, long userId);
+    @Query("update ProfileEntity p set p.visible = ?1 where p.id = ?2")
+    void updateVisible(boolean b, Long id);
 }

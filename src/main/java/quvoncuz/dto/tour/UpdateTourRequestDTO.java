@@ -20,6 +20,8 @@ public class UpdateTourRequestDTO {
     private String destination;
     @Positive(message = "Days must be positive")
     private int durationDays;
+    @Positive(message = "Price must be positive")
+    private long price;
     @Positive(message = "Seats must be positive")
     private int maxSeats;
     @NotNull(message = "Start date is mandatory")

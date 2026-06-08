@@ -15,6 +15,8 @@ import java.util.List;
 @AllArgsConstructor
 public class NotificationEvent {
 
+    private String binding;
+
     private Long entityId;
 
     private EventType eventType;

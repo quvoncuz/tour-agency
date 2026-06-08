@@ -1,7 +1,6 @@
 package quvoncuz.dto;
 
 import lombok.*;
-import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 

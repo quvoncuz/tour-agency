@@ -12,9 +12,6 @@ import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.SavedTourService;
-import quvoncuz.util.SecurityUtil;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,31 +22,22 @@ public class SavedTourServiceImpl implements SavedTourService {
 
     @Override
     @Transactional
-    public Boolean saveTour(SaveTourRequestDTO dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
+    public void saveTour(SaveTourRequestDTO dto, Long userId) {
         if (savedTourRepository.existsByTourIdAndUserId(dto.getTourId(), userId)) {
-            return savedTourRepository.deleteByTourIdAndUserId(dto.getTourId(), userId);
+            savedTourRepository.deleteByTourIdAndUserId(dto.getTourId(), userId);
         }
         SavedTourEntity savedTour = new SavedTourEntity();
         savedTour.setUserId(userId);
         savedTour.setTourId(dto.getTourId());
         savedTourRepository.save(savedTour);
-        return true;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TourShortInfo> getAllSavedTours(int page, int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        List<Long> allSavedTourIdByUserId = savedTourRepository
-                .findAllByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
-                .map(SavedTourEntity::getTourId)
-                .toList();
-
+    public Page<TourShortInfo> getAllSavedTours(Long userId, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
+        return tourRepository.findSavedToursByUserId(userId, pageRequest)
                 .map(TourMapper::toShortInfo);
     }
 

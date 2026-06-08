@@ -3,10 +3,8 @@ package quvoncuz.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.entities.BookingEntity;
 import quvoncuz.enums.BookingStatus;
 
@@ -16,22 +14,11 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
 
-    boolean existsByTourIdAndUserId(Long tourId, Long userId);
-
     Page<BookingEntity> findAllByTourId(Long tourId, Pageable pageable);
 
     List<BookingEntity> findAllByTourId(Long tourId);
 
-    Page<BookingEntity> findAllByTourIdIsIn(List<Long> tourIds, Pageable pageable);
-
-    @Modifying
-    @Transactional
-    @Query("update BookingEntity set status = ?1 where id = ?2")
-    void updateStatus(BookingStatus bookingStatus, Long bookingId);
-
-    List<BookingEntity> findAllByUserId(Long userId);
-
-    boolean existsByTourIdAndUserIdAndStatusIs(Long tourId, Long userId, BookingStatus status);
+    Page<BookingEntity> findAllByUserId(Long userId, Pageable pageable);
 
     boolean existsByTourIdAndUserIdAndStatusIsNot(Long tourId, Long userId, BookingStatus status);
 
@@ -40,8 +27,6 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     List<BookingEntity> findAllByTourIdAndStatus(Long tourId, BookingStatus bookingStatus);
 
     List<BookingEntity> findAllByUserIdAndStatus(Long userId, BookingStatus status);
-
-    Page<BookingEntity> findAllByUserId(Long userId, Pageable pageable);
 
     @Query("from BookingEntity as b where b.tour.agencyId = ?1 order by b.bookedAt desc ")
     Page<BookingEntity> findAllByAgencyId(long userId, Pageable pageable);
@@ -52,5 +37,9 @@ public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
     @Query("select b.user.email from BookingEntity as b where b.tourId = ?1 and b.status <> ?2")
     List<String> findAllEmailByTourIdAndStatus(Long tourId, BookingStatus bookingStatus);
 
-    List<BookingEntity> findAllByTourId(Long tourId);
+    Optional<BookingEntity> findByIdAndTour_AgencyId(Long id, Long tourAgencyId);
+
+    Optional<BookingEntity> findAllByUserIdAndTourIdAndStatus(Long userId, Long tourId, BookingStatus status);
+
+    List<BookingEntity> findAllByUserIdAndTour_AgencyId(Long userId, Long tourAgencyId);
 }

@@ -23,4 +23,9 @@ public interface AgencyRepository extends JpaRepository<AgencyEntity, Long> {
     void updateRating(double averageRating, Long agencyId);
 
     Page<AgencyEntity> findAllByStatus(AgencyStatus status, Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("update AgencyEntity a set a.visible = ?1 where a.id = ?2")
+    void updateVisible(boolean visible, Long agencyId);
 }

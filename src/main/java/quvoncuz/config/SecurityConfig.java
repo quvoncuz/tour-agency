@@ -44,6 +44,7 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tours/all", "/tours/*", "/agencies/all", "/agencies/*", "/ratings/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/click/prepare", "/click/complete").permitAll()
                 .anyRequest().authenticated()
