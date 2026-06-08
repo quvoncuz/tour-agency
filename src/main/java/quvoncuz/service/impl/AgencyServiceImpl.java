@@ -15,8 +15,8 @@ import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.EventType;
 import quvoncuz.enums.Role;
-import quvoncuz.events.NotificationEvent;
-import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -92,7 +92,7 @@ public class AgencyServiceImpl implements AgencyService {
             profileRepository.save(profile);
 
             applicationEventPublisher.publishEvent(
-                    NotificationEvent.builder()
+                    NotificationEventHelper.builder()
                             .binding(RabbitMQConfig.AGENCY_APPROVED)
                             .entityId(agency.getId())
                             .eventType(EventType.AGENCY_APPROVED)
@@ -102,7 +102,7 @@ public class AgencyServiceImpl implements AgencyService {
                             .build());
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEvent.builder()
+                    StatisticsEventHelper.builder()
                             .binding(RabbitMQConfig.AGENCY_CREATED)
                             .entityId(profile.getId())
                             .eventType(EventType.USER_REGISTERED)

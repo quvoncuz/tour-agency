@@ -10,6 +10,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import quvoncuz.events.NotificationEvent;
 import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.events.producer.EventPublisher;
 
 @Slf4j
@@ -21,7 +23,7 @@ public class EventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleStatisticsEvent(StatisticsEvent event) {
+    public void handleStatisticsEvent(StatisticsEventHelper event) {
         try {
             eventPublisher.publishStatistics(
                     event.getBinding(),
@@ -40,7 +42,7 @@ public class EventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleNotificationEvent(NotificationEvent event) {
+    public void handleNotificationEvent(NotificationEventHelper event) {
         try {
             eventPublisher.publishNotification(
                     event.getBinding(),

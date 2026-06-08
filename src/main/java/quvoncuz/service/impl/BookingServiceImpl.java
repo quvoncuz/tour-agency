@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.booking.*;
 import quvoncuz.entities.BookingEntity;
@@ -351,7 +352,8 @@ public class BookingServiceImpl implements BookingService {
                 .toList();
     }
 
-    private void createPayment(BookingEntity booking, Long userId) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void createPayment(BookingEntity booking, Long userId) {
         PaymentEntity payment = PaymentEntity.builder()
                 .userId(userId)
                 .tourId(booking.getTourId())

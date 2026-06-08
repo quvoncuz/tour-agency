@@ -16,8 +16,8 @@ import quvoncuz.entities.BookingEntity;
 import quvoncuz.entities.ClickTransactionEntity;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.*;
-import quvoncuz.events.NotificationEvent;
-import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
@@ -236,7 +236,7 @@ public class ClickService {
             log.info("Bill turned paid status!");
 
             applicationEventPublisher.publishEvent(
-                    NotificationEvent.builder()
+                    NotificationEventHelper.builder()
                             .binding(RabbitMQConfig.NOTIFICATION_BOOKING_COMPLETED)
                             .entityId(booking.getId())
                             .eventType(EventType.BOOKING_COMPLETED)
@@ -247,7 +247,7 @@ public class ClickService {
             );
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEvent.builder()
+                    StatisticsEventHelper.builder()
                             .binding(RabbitMQConfig.STATISTICS_BOOKING_COMPLETED)
                             .entityId(booking.getId())
                             .superId(booking.getTourId())

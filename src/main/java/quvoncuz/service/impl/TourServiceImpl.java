@@ -15,8 +15,8 @@ import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.EventType;
 import quvoncuz.enums.TourStatus;
-import quvoncuz.events.NotificationEvent;
-import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -62,7 +62,7 @@ public class TourServiceImpl implements TourService {
         List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
 
         applicationEventPublisher.publishEvent(
-                NotificationEvent.builder()
+                NotificationEventHelper.builder()
                         .binding(RabbitMQConfig.NOTIFICATION_TOUR_CREATED)
                         .entityId(tour.getId())
                         .eventType(EventType.TOUR_CREATED)
@@ -72,7 +72,7 @@ public class TourServiceImpl implements TourService {
                         .build());
 
         applicationEventPublisher.publishEvent(
-                StatisticsEvent.builder()
+                StatisticsEventHelper.builder()
                         .binding(RabbitMQConfig.STATISTICS_TOUR_CREATED)
                         .entityId(tour.getId())
                         .superId(tour.getAgencyId())
@@ -124,7 +124,7 @@ public class TourServiceImpl implements TourService {
             bookingRepository.saveAll(bookings);
 
             applicationEventPublisher.publishEvent(
-                    NotificationEvent.builder()
+                    NotificationEventHelper.builder()
                             .binding(RabbitMQConfig.TOUR_UPDATED)
                             .entityId(tour.getId())
                             .eventType(EventType.TOUR_UPDATED)
@@ -165,7 +165,7 @@ public class TourServiceImpl implements TourService {
         tourRepository.save(tour);
 
         applicationEventPublisher.publishEvent(
-                NotificationEvent.builder()
+                NotificationEventHelper.builder()
                         .binding(RabbitMQConfig.TOUR_CANCELED)
                         .entityId(tour.getId())
                         .eventType(EventType.TOUR_CANCELED)
