@@ -1,10 +1,11 @@
-package quvoncuz.controller;
+package quvoncuz.controller.common;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import quvoncuz.dto.ApiResponse;
 import quvoncuz.dto.click.ClickResponse;
 import quvoncuz.dto.click.CompleteRequest;
 import quvoncuz.dto.click.PrepareRequest;
@@ -21,9 +22,9 @@ public class ClickController {
 
     @PreAuthorize("hasAnyRole('AGENCY', 'USER')")
     @PostMapping("/pay")
-    public ResponseEntity<PaymentResponse> pay(
+    public ResponseEntity<ApiResponse<PaymentResponse>> pay(
             @Valid @RequestBody PaymentRequestDTO request) {
-        return ResponseEntity.ok(clickService.generatePaymentUrl(request));
+        return ResponseEntity.ok(ApiResponse.success(clickService.generatePaymentUrl(request)));
     }
 
     @PostMapping("/prepare")
