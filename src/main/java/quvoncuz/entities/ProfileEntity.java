@@ -7,10 +7,12 @@ import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "profiles")
+@Table(name = "profiles", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email"),
+        @UniqueConstraint(columnNames = "username")
+})
 @Getter
 @Setter
 @Builder
@@ -42,24 +44,14 @@ public class ProfileEntity {
     private Gender gender;
 
     @Column(name = "is_created_agency")
-    private Boolean isCreateAgency = false;
+    private Boolean isCreatedAgency = false;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    private Boolean visible = true;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @OneToOne(mappedBy = "owner")
-    private AgencyEntity agency;
-
-    @OneToMany(mappedBy = "user")
-    private List<BookingEntity> bookings;
-
-    @OneToMany(mappedBy = "user")
-    private List<PaymentEntity> payments;
-
-    @OneToMany(mappedBy = "user")
-    private List<SavedTourEntity> savedTours;
 }
