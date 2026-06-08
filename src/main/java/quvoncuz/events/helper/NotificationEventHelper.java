@@ -1,4 +1,4 @@
-package quvoncuz.events;
+package quvoncuz.events.helper;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,9 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationEvent {
+public class NotificationEventHelper {
+
+    private String binding;
 
     private Long entityId;
 

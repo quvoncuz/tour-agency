@@ -1,4 +1,4 @@
-package quvoncuz.events;
+package quvoncuz.events.helper;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,21 +7,20 @@ import lombok.NoArgsConstructor;
 import quvoncuz.enums.EventType;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationEvent {
+public class StatisticsEventHelper {
+
+    private String binding;
+
+    private Long superId; // agencyId <- tourId,   tourId <- bookingId
 
     private Long entityId;
 
     private EventType eventType;
-
-    private String subjectName;
-
-    private List<String> mails;
 
     private LocalDateTime dateTime;
 }

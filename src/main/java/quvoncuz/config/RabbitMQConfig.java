@@ -18,13 +18,13 @@ public class RabbitMQConfig {
     public static final String STATISTICS_QUEUE = "statistics.queue";
     public static final String DLQ_QUEUE = "dlq.queue";
 
-    public static final String USER_REGISTERED = "user.registered";
-    public static final String AGENCY_CREATED = "agency.created";
-    public static final String AGENCY_APPROVED = "agency.approved";
+    public static final String USER_REGISTERED = "statistics.user.registered";
+    public static final String AGENCY_CREATED = "notification.agency.created";
+    public static final String AGENCY_APPROVED = "statistics.agency.approved";
     public static final String NOTIFICATION_TOUR_CREATED = "notification.tour.created";
     public static final String STATISTICS_TOUR_CREATED = "statistics.tour.created";
-    public static final String TOUR_UPDATED = "tour.updated";
-    public static final String TOUR_CANCELED = "tour.canceled";
+    public static final String TOUR_UPDATED = "notification.tour.updated";
+    public static final String TOUR_CANCELED = "notification.tour.canceled";
     public static final String NOTIFICATION_BOOKING_COMPLETED = "notification.booking.completed";
     public static final String STATISTICS_BOOKING_COMPLETED = "statistics.booking.completed";
     public static final String DLQ_ROUTING_KEY = "dlq.routing.key";
@@ -87,55 +87,13 @@ public class RabbitMQConfig {
     @Bean
     public Binding notificationAgencyApprovedBinding() {
         return BindingBuilder.bind(notificationQueue())
-                .to(appExchange()).with(AGENCY_APPROVED);
-    }
-
-    @Bean
-    public Binding notificationTourCreatedBinding() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(appExchange()).with(NOTIFICATION_TOUR_CREATED);
-    }
-
-    @Bean
-    public Binding notificationTourUpdatedBinding() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(appExchange()).with(TOUR_UPDATED);
-    }
-
-    @Bean
-    public Binding notificationTourCanceledBinding() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(appExchange()).with(TOUR_CANCELED);
-    }
-
-    @Bean
-    public Binding notificationBookingCompleted() {
-        return BindingBuilder.bind(notificationQueue())
-                .to(appExchange()).with(NOTIFICATION_BOOKING_COMPLETED);
+                .to(appExchange()).with("notification.#");
     }
 
     //statistics
     @Bean
     public Binding statisticsUserRegisteredBinding() {
         return BindingBuilder.bind(statisticsQueue())
-                .to(appExchange()).with(USER_REGISTERED);
-    }
-
-    @Bean
-    public Binding statisticsAgencyCreatedBinding() {
-        return BindingBuilder.bind(statisticsQueue())
-                .to(appExchange()).with(AGENCY_CREATED);
-    }
-
-    @Bean
-    public Binding statisticsTourCreatedBinding() {
-        return BindingBuilder.bind(statisticsQueue())
-                .to(appExchange()).with(STATISTICS_TOUR_CREATED);
-    }
-
-    @Bean
-    public Binding statisticsBookingCompletedBinding() {
-        return BindingBuilder.bind(statisticsQueue())
-                .to(appExchange()).with(NOTIFICATION_BOOKING_COMPLETED);
+                .to(appExchange()).with("statistics.#");
     }
 }

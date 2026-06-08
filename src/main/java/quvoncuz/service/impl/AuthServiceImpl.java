@@ -14,7 +14,7 @@ import quvoncuz.dto.auth.LoginRequestDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.EventType;
-import quvoncuz.events.StatisticsEvent;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.ProfileRepository;
@@ -50,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("New user registered: {}", profile.getUsername());
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEvent.builder()
+                    StatisticsEventHelper.builder()
                             .binding(RabbitMQConfig.USER_REGISTERED)
                             .entityId(profile.getId())
                             .eventType(EventType.USER_REGISTERED)

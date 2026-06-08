@@ -14,8 +14,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class StatisticsEvent {
 
-    private String binding;
-
     private Long superId; // agencyId <- tourId,   tourId <- bookingId
 
     private Long entityId;
