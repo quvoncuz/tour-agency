@@ -4,10 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import quvoncuz.enums.AgencyStatus;
 
-import java.util.List;
-
 @Entity
-@Table(name = "agencies")
+@Table(name = "agencies", uniqueConstraints = @UniqueConstraint(columnNames = "owner_id"))
 @Getter
 @Setter
 @Builder
@@ -18,25 +16,25 @@ public class AgencyEntity {
     @Id
     private Long id;
 
-    @Column(name = "owner_id")
+    @Column(name = "owner_id", unique = true)
     private Long ownerId;
     @OneToOne
     @JoinColumn(name = "owner_id", insertable = false, updatable = false)
     private ProfileEntity owner;
 
-    @Column
+    @Column(unique = true, nullable = false)
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String phone;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column
     private String description;
 
-    @Column
+    @Column(nullable = false)
     private String city;
 
     @Column
@@ -48,10 +46,9 @@ public class AgencyEntity {
     @Column
     private Double rating;
 
+    private Boolean visible = true;
+
     @Column
     @Enumerated(EnumType.STRING)
     private AgencyStatus status;
-
-    @OneToMany(mappedBy = "agency")
-    private List<TourEntity> tours;
 }

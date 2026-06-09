@@ -31,7 +31,7 @@ public class ProfileMapper {
                 .password(dto.getPassword())
                 .role(Role.USER)
                 .gender(dto.getGender())
-                .isCreateAgency(false)
+                .isCreatedAgency(false)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -1,17 +1,22 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
+import quvoncuz.enums.EventType;
 import quvoncuz.enums.Role;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -19,28 +24,31 @@ import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.AgencyMapper;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
+import quvoncuz.repository.TourRepository;
 import quvoncuz.service.AgencyService;
-import quvoncuz.util.SecurityUtil;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AgencyServiceImpl implements AgencyService {
 
-    private final Logger logger = LoggerFactory.getLogger(AgencyServiceImpl.class);
     private final ProfileRepository profileRepository;
     private final AgencyRepository agencyRepository;
+    private final TourRepository tourRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
-    public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
+    public AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId) {
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         if (!profile.getRole().equals(Role.USER)) {
             throw new PermissionDeniedException("You have a agency already");
         }
-        if (profile.getIsCreateAgency()) {
+        if (profile.getIsCreatedAgency()) {
             throw new AlreadyExistsException("You already created agency!");
         }
         AgencyEntity agency = AgencyEntity.builder()
@@ -56,14 +64,22 @@ public class AgencyServiceImpl implements AgencyService {
                 .rating(0.0)
                 .status(AgencyStatus.PENDING)
                 .build();
-        agencyRepository.save(agency);
-        logger.info("User with id {} applied for agency with id {}", userId, agency.getId());
+        try {
+            agencyRepository.save(agency);
+        } catch (DataIntegrityViolationException e) {
+            throw new AlreadyExistsException("You already created agency");
+        }
+
+        profile.setIsCreatedAgency(true);
+        profileRepository.save(profile);
+
+        log.info("User with id {} applied for agency with id {}", userId, agency.getId());
         return AgencyMapper.toDTO(agency);
     }
 
     @Override
     @Transactional
-    public Boolean approveAgency(AgencyApproveRequestDTO dto) {
+    public void approveAgency(AgencyApproveRequestDTO dto) {
 
         AgencyEntity agency = findById(dto.getAgencyId());
 
@@ -71,45 +87,58 @@ public class AgencyServiceImpl implements AgencyService {
             ProfileEntity profile = profileRepository.findById(agency.getOwnerId())
                     .orElseThrow(() -> new NotFoundException("User not found"));
             profile.setRole(Role.AGENCY);
-            profile.setIsCreateAgency(true);
             agency.setStatus(AgencyStatus.ACCEPTED);
             agency.setApproved(true);
             profileRepository.save(profile);
+
+            applicationEventPublisher.publishEvent(
+                    NotificationEventHelper.builder()
+                            .binding(RabbitMQConfig.AGENCY_APPROVED)
+                            .entityId(agency.getId())
+                            .eventType(EventType.AGENCY_APPROVED)
+                            .subjectName(agency.getName())
+                            .mails(List.of(agency.getEmail()))
+                            .dateTime(LocalDateTime.now())
+                            .build());
+
+            applicationEventPublisher.publishEvent(
+                    StatisticsEventHelper.builder()
+                            .binding(RabbitMQConfig.AGENCY_CREATED)
+                            .entityId(profile.getId())
+                            .eventType(EventType.USER_REGISTERED)
+                            .dateTime(LocalDateTime.now())
+                            .build());
+
         } else {
             agency.setStatus(AgencyStatus.REJECTED);
+            agency.setApproved(false);
         }
         agencyRepository.save(agency);
-        logger.info("Agency with id {}", dto.getApprove() ? "approved" : "rejected");
-        return true;
+        log.info("Agency with id {} {}", dto.getAgencyId(), dto.getApprove() ? "approved" : "rejected");
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<AgencyShortInfo> getPendingAgencies(int page, int size) {
-        logger.info("Admin requested pending agencies");
-
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-
-        Page<AgencyEntity> pageResult = agencyRepository.findAllByStatus(AgencyStatus.PENDING, pageRequest);
-        return pageResult
-                .map(AgencyMapper::toShortInfo);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AgencyFullInfo> getAllAgencies(int page, int size) {
-        logger.info("Requested all agencies");
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return agencyRepository.findAll(pageRequest)
-                .map(AgencyMapper::toFullInfo);
+    public Page<AgencyShortInfo> getAllAgencies(boolean pending, int page, int size) {
+        if (pending) {
+            log.info("Requested pending agencies");
+            PageRequest pageRequest = PageRequest.of(page - 1, size);
+            Page<AgencyEntity> pageResult = agencyRepository.findAllByStatus(AgencyStatus.PENDING, pageRequest);
+            return pageResult
+                    .map(AgencyMapper::toShortInfo);
+        } else {
+            log.info("Requested all agencies");
+            PageRequest pageRequest = PageRequest.of(page - 1, size);
+            return agencyRepository.findAll(pageRequest)
+                    .map(AgencyMapper::toShortInfo);
+        }
     }
 
     @Override
     @Transactional
-    public AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
+    public AgencyFullInfo update(Long id, Long userId, UpdateAgencyRequestDTO dto) {
+
         ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
-        AgencyEntity agency = findById(agencyId);
+        AgencyEntity agency = findById(id);
 
         if (!profile.getId().equals(agency.getOwnerId())) {
             throw new DoNotMatchException("You are not owner");
@@ -123,27 +152,24 @@ public class AgencyServiceImpl implements AgencyService {
         agency.setAddress(dto.getAddress());
 
         agencyRepository.save(agency);
-        logger.info("User with id {} updated agency with id {}", userId, agency.getId());
+        log.info("User with id {} updated agency with id {}", userId, agency.getId());
         return AgencyMapper.toFullInfo(agency);
     }
 
     @Override
-    public Boolean deleteById(Long agencyId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        logger.info("Admin with id {} deleted agency with id {}", userId, agencyId);
-        agencyRepository.deleteById(agencyId);
-        return true;
+    public void deleteById(Long agencyId) {
+        log.info("Admin deleted agency. Id: {}", agencyId);
+        agencyRepository.updateVisible(false, agencyId);
+        tourRepository.updateVisibleByAgencyId(agencyId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public AgencyDTO findByAgencyId(Long agencyId) {
-        logger.info("Requested agency with id {}", agencyId);
+        log.info("Requested agency with id {}", agencyId);
         return AgencyMapper.toDTO(findById(agencyId));
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<AgencyEntity> findByOwnerId(Long ownerId) {
         return agencyRepository.findByOwnerId(ownerId);
     }

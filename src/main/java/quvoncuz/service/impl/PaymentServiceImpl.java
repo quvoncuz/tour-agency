@@ -7,20 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.payment.PaymentShortInfo;
-import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.PaymentEntity;
-import quvoncuz.entities.ProfileEntity;
-import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.PaymentStatus;
-import quvoncuz.enums.Role;
-import quvoncuz.exceptions.NotFoundException;
-import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.PaymentMapper;
 import quvoncuz.repository.PaymentRepository;
-import quvoncuz.repository.ProfileRepository;
-import quvoncuz.repository.TourRepository;
 import quvoncuz.service.PaymentService;
-import quvoncuz.util.SecurityUtil;
 
 @Slf4j
 @Service
@@ -29,60 +20,47 @@ import quvoncuz.util.SecurityUtil;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final ProfileRepository profileRepository;
-    private final TourRepository tourRepository;
-
-
-    @Override
-    public Page<PaymentShortInfo> findAllByRefund(int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return paymentRepository.findAllByStatusOrderByCreatedAtDesc(PaymentStatus.REFUND, pageRequest)
-                .map(PaymentMapper::toShortInfo);
-    }
 
     // ADMIN
     @Override
-    public Page<PaymentShortInfo> findAll(int page, int size) {
+    public Page<PaymentShortInfo> findAll(Boolean refund, Long userId, Long tourId, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
+        Page<PaymentEntity> result;
 
-        Page<PaymentEntity> pageResult = paymentRepository.findAll(pageRequest);
+        if (refund) {
+            log.info("Admin requested refund payments");
+            result = paymentRepository
+                    .findAllByStatusOrderByCreatedAtDesc(
+                            PaymentStatus.REFUND,
+                            pageRequest
+                    );
+        } else if (userId != 0) {
+            log.info("Admin requested payments by user id");
+            result = paymentRepository
+                    .findAllByUserId(userId, pageRequest);
 
-        log.info("Admin requested all payment");
-        return pageResult
-                .map(PaymentMapper::toShortInfo);
+        } else if (tourId != 0) {
+            log.info("Admin requested payments by tour id");
+            result = paymentRepository
+                    .findAllByTourId(tourId, pageRequest);
+
+        } else {
+            log.info("Admin requested all payments");
+            result = paymentRepository.findAll(pageRequest);
+        }
+
+        return result.map(PaymentMapper::toShortInfo);
     }
 
     // ADMIN and USER himself
     @Override
-    public Page<PaymentShortInfo> findAllByUserId(int page, int size) {
-
-        long userId = SecurityUtil.getCurrentUserId();
+    public Page<PaymentShortInfo> findAllByUserId(Long userId, int page, int size) {
 
         log.info("User with ID: {} requested their payment history", userId);
 
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
         return paymentRepository.findAllByUserId(userId, pageRequest)
-                .map(PaymentMapper::toShortInfo);
-    }
-
-    //ADMIN and AGENCY
-    @Override
-    public Page<PaymentShortInfo> findAllByTourId(Long tourId, int page, int size) {
-        long userId = SecurityUtil.getCurrentUserId();
-
-        ProfileEntity admin = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
-
-        TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
-        AgencyEntity agency = tour.getAgency();
-        if (!agency.getOwnerId().equals(userId) && admin.getRole() != Role.ADMIN) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
-        log.info("User with ID: {} requested payment history for tour ID: {} ", userId, tourId);
-
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-
-        return paymentRepository.findAllByTourId(tourId, pageRequest)
                 .map(PaymentMapper::toShortInfo);
     }
 }

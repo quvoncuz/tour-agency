@@ -7,25 +7,21 @@ import java.util.List;
 
 public interface BookingService {
 
-    BookingFullInfo createBooking(CreateBookingRequestDTO dto);
+    BookingFullInfo createBooking(CreateBookingRequestDTO dto, Long userId);
 
-    Page<BookingShortInfo> findAllByUserId(Long adminId, int page, int size);
+    Page<BookingShortInfo> findAllByUserId(Long userId, int page, int size);
 
-    Page<BookingShortInfo> findAllByTourId(Long userId, int page, int size);
+    Page<BookingShortInfo> findAllForAdmin(Long userId, Long tourId, Long agencyId, int page, int size);
 
-    Page<BookingShortInfo> findAllByAgencyId(Long userId, int page, int size);
+    Page<BookingShortInfo> findAllForAgency(Long tourId, Long userId, int page, int size);
 
-    BookingFullInfo confirmUpdatedBooking(Long bookingId);
+    BookingFullInfo confirmUpdatedBooking(Long bookingId, ConfirmBookingDTO dto, Long userId);
 
-    BookingFullInfo cancelUpdateBooking(Long bookingId);
+    void cancelBooking(CancelBookingRequestDTO dto, Long userId);
 
-    boolean cancelBooking(CancelBookingRequestDTO dto);
+    BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto, Long userId);
 
-    BookingFullInfo updateBookingSeats(Long bookingId, UpdateBookingRequestDTO dto);
+    BookingFullInfo findFullInfoById(long bookingId, Long userId);
 
-    BookingFullInfo findFullInfoById(long bookingId);
-
-    List<BookingFullInfo> getUpdatedBooking();
-
-    Page<BookingShortInfo> findAllByUser(int page, int size);
+    List<BookingFullInfo> getUpdatedBooking(Long userId);
 }

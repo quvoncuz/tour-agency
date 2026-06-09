@@ -2,6 +2,7 @@ package quvoncuz.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import quvoncuz.enums.PaymentStatus;
 
 import java.time.LocalDateTime;
@@ -45,6 +46,7 @@ public class PaymentEntity {
     private PaymentStatus status;
 
     @Column(name = "created_at")
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Column(name = "cancelled_at")

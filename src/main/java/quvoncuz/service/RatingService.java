@@ -5,27 +5,23 @@ import quvoncuz.dto.rating.RatingFullInfo;
 import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.RatingShortInfo;
 import quvoncuz.dto.rating.UpdateRatingRequestDTO;
-import quvoncuz.entities.RatingEntity;
 import quvoncuz.enums.RatingType;
-
-import java.util.Optional;
 
 public interface RatingService {
 
-    RatingFullInfo create(RatingRequestDTO dto);
+    RatingFullInfo create(RatingRequestDTO dto, Long userId);
 
-    RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto);
+    RatingFullInfo update(Long ratingId, UpdateRatingRequestDTO dto, Long userId);
 
-    Boolean delete(Long ratingId);
+    void delete(Long ratingId);
+
+    void deleteOwnRating(Long ratingId, Long userId);
 
     Page<RatingShortInfo> findBySourceIdAndType(Long sourceId, RatingType type, int page, int size);
 
     Page<RatingShortInfo> findByUserId(Long userId, int page, int size);
 
-    Page<RatingShortInfo> findOwnRatings(int page, int size);
-
-    Optional<RatingEntity> findByUserIdAndSourceIdAndType(
-            Long userId, Long sourceId, RatingType type);
+    Page<RatingShortInfo> findOwnRatings(Long userId, int page, int size);
 
     boolean hasRated(Long userId, Long sourceId, RatingType target);
 }

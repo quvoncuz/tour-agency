@@ -1,32 +1,33 @@
 package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
-import quvoncuz.entities.*;
+import quvoncuz.config.RabbitMQConfig;
+import quvoncuz.dto.tour.*;
+import quvoncuz.entities.AgencyEntity;
+import quvoncuz.entities.BookingEntity;
+import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.BookingStatus;
-import quvoncuz.enums.Role;
-import quvoncuz.exceptions.InvalidException;
+import quvoncuz.enums.EventType;
+import quvoncuz.enums.TourStatus;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
+import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
 import quvoncuz.mapper.TourMapper;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.BookingRepository;
-import quvoncuz.repository.SavedTourRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.AgencyService;
-import quvoncuz.service.NotificationService;
-import quvoncuz.service.ProfileService;
 import quvoncuz.service.TourService;
-import quvoncuz.util.SecurityUtil;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -35,35 +36,65 @@ public class TourServiceImpl implements TourService {
 
     private final AgencyRepository agencyRepository;
     private final TourRepository tourRepository;
-    private final SavedTourRepository savedTourRepository;
     private final AgencyService agencyService;
     private final BookingRepository bookingRepository;
-    private final ProfileService profileService;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
-    public TourFullInfo createTour(CreateTourRequestDTO dto) {
-        Long ownerId = SecurityUtil.getCurrentUserId();
-        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
+    public TourFullInfo createTour(CreateTourRequestDTO dto, Long userId) {
+        AgencyEntity agency = agencyRepository.findByOwnerId(userId)
+                .orElseThrow(() -> new NotFoundException("Agency not found"));
 
         if (!agency.getStatus().equals(AgencyStatus.ACCEPTED)) {
             throw new PermissionDeniedException("You don't have permission!");
+        }
+
+        if (!agency.getVisible()) {
+            throw new PermissionDeniedException("You can't create tour");
         }
 
         TourEntity tour = TourMapper.toEntity(dto);
         tour.setAgencyId(agency.getId());
 
         tour = tourRepository.save(tour);
+
+        List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
+
+        applicationEventPublisher.publishEvent(
+                NotificationEventHelper.builder()
+                        .binding(RabbitMQConfig.NOTIFICATION_TOUR_CREATED)
+                        .entityId(tour.getId())
+                        .eventType(EventType.TOUR_CREATED)
+                        .subjectName(tour.getTitle())
+                        .mails(allUserEmailBookedByAgency)
+                        .dateTime(LocalDateTime.now())
+                        .build());
+
+        applicationEventPublisher.publishEvent(
+                StatisticsEventHelper.builder()
+                        .binding(RabbitMQConfig.STATISTICS_TOUR_CREATED)
+                        .entityId(tour.getId())
+                        .superId(tour.getAgencyId())
+                        .eventType(EventType.TOUR_CREATED)
+                        .dateTime(LocalDateTime.now())
+                        .build());
+
         return TourMapper.toFullInfo(tour);
     }
 
     @Override
     @Transactional
-    public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto) {
-        Long ownerId = SecurityUtil.getCurrentUserId();
-        AgencyEntity agency = agencyRepository.findByOwnerId(ownerId).orElseThrow(() -> new NotFoundException("Agency not found"));
+    public TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long userId) {
+
+        AgencyEntity agency = agencyRepository.findByOwnerId(userId).orElseThrow(() -> new NotFoundException("Agency not found"));
         TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
+
+        if (!agency.getVisible()) {
+            throw new PermissionDeniedException("You can't create tour");
+        }
+
+        Long oldPrice = tour.getPrice();
 
         if (!tour.getAgencyId().equals(agency.getId())) {
             throw new PermissionDeniedException("You don't have permission");
@@ -73,58 +104,85 @@ public class TourServiceImpl implements TourService {
         tour.setDescription(dto.getDescription());
         tour.setDestination(dto.getDestination());
         tour.setDurationDays(dto.getDurationDays());
+        tour.setPrice(dto.getPrice());
         tour.setMaxSeats(dto.getMaxSeats());
         tour.setStartDate(dto.getStartDate());
         tour.setEndDate(dto.getEndDate());
 
         tourRepository.save(tour);
+
+        if (!oldPrice.equals(dto.getPrice())) {
+            List<BookingEntity> bookings = bookingRepository.findAllByTourIdAndStatus(tourId, BookingStatus.PENDING);
+            bookings.forEach(booking -> {
+                Integer seatsBooked = booking.getSeatsBooked();
+                booking.setTotalPrice(seatsBooked * dto.getPrice());
+                booking.setStatus(BookingStatus.ON_UPDATE);
+            });
+
+            List<String> allEmailByTourIdAndStatus = bookingRepository.findAllEmailByTourIdAndStatus(tourId, BookingStatus.PENDING);
+
+            bookingRepository.saveAll(bookings);
+
+            applicationEventPublisher.publishEvent(
+                    NotificationEventHelper.builder()
+                            .binding(RabbitMQConfig.TOUR_UPDATED)
+                            .entityId(tour.getId())
+                            .eventType(EventType.TOUR_UPDATED)
+                            .subjectName(tour.getTitle())
+                            .mails(allEmailByTourIdAndStatus)
+                            .dateTime(LocalDateTime.now())
+                            .build());
+        }
+
         return TourMapper.toFullInfo(tour);
     }
 
     @Override
     @Transactional
-    public TourFullInfo updateTourPrice(Long tourId, Long newPrice) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        ProfileEntity profile = profileService.findById(userId);
-        if (profile.getRole() != Role.AGENCY) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
-        TourEntity tour = tourRepository.findById(tourId).orElseThrow(() -> new NotFoundException("Tour not found"));
-        if (!tour.getAgency().getOwner().getId().equals(userId)) {
-            throw new PermissionDeniedException("You don't have permission");
-        }
-        Long old = tour.getPrice();
-        if (newPrice.equals(tour.getPrice())) {
-            throw new InvalidException("Change the value");
-        }
-        List<BookingEntity> bookings = bookingRepository.findAllByTourIdAndStatus(tourId, BookingStatus.PENDING);
-        bookings.forEach(booking -> {
-            Integer seatsBooked = booking.getSeatsBooked();
-            booking.setTotalPrice(seatsBooked * newPrice);
-            booking.setStatus(BookingStatus.ON_UPDATE);
+    public void cancelTour(Long tourId, CancelTourDTO reason, Long userId) {
 
-            notificationService.sendNotificationForTourUpdate(booking.getUser().getEmail(), tour.getTitle(), old, tour.getPrice());
-        });
+        AgencyEntity agency = agencyService.findByOwnerId(userId)
+                .orElseThrow(() -> new NotFoundException("Agency not found"));
+
+        TourEntity tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new NotFoundException("Tour not found"));
+
+        if (!agency.getId().equals(tour.getAgencyId())) {
+            throw new DoNotMatchException("You don't have permission");
+        }
+
+        tour.setStatus(TourStatus.CANCELLED);
+
+        List<BookingEntity> bookings = bookingRepository.findAllByTourId(tourId);
+        bookings.forEach(booking -> booking.setStatus(BookingStatus.CANCELED));
+
+        List<String> mails = bookings.stream()
+                .map(booking -> booking.getUser().getEmail())
+                .toList();
 
         bookingRepository.saveAll(bookings);
 
-        return TourMapper.toFullInfo(tour);
+        tourRepository.save(tour);
+
+        applicationEventPublisher.publishEvent(
+                NotificationEventHelper.builder()
+                        .binding(RabbitMQConfig.TOUR_CANCELED)
+                        .entityId(tour.getId())
+                        .eventType(EventType.TOUR_CANCELED)
+                        .subjectName(tour.getTitle())
+                        .mails(mails)
+                        .dateTime(LocalDateTime.now())
+                        .build());
     }
 
     @Override
     @Transactional
-    public Boolean deleteTour(Long tourId) {
-        Long ownerId = SecurityUtil.getCurrentUserId();
-        Long agencyId = agencyService.findByOwnerId(ownerId)
-                .orElseThrow(() -> new NotFoundException("Agency not found")).getId();
-        tourRepository.deleteByIdAndAgencyId(tourId, agencyId);
-        return true;
+    public void deleteTour(Long tourId, Long userId) {
+        tourRepository.updateVisible(false, tourId, userId);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<TourShortInfo> getAllTour(int page, int size) {
-
+    public Page<TourShortInfo> getAllTourForAdmin(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
         return tourRepository.findAll(pageRequest)
@@ -132,50 +190,34 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    public Page<TourShortInfo> getAllTourForAgency(Long userId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+        return tourRepository.findAllByAgencyId(userId, pageRequest)
+                .map(TourMapper::toShortInfo);
+    }
+
+    @Override
     public Page<TourShortInfo> getAllActiveTour(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
-        return tourRepository.findAll(pageRequest)
+        return tourRepository.findAllByStatusAndVisible(TourStatus.ACTIVE, true, pageRequest)
                 .map(TourMapper::toShortInfo);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public TourFullInfo getById(Long id) {
         TourEntity tourById = tourRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Tour not found"));
-        incrementViewCount(tourById);
+        tourRepository.incrementViewCount(id);
         return TourMapper.toFullInfo(tourById);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<TourShortInfo> getAllSavedTours(int page, int size) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        PageRequest pageRequest = PageRequest.of(page - 1, size);
-
-        List<Long> allSavedTourIdByUserId = savedTourRepository
-                .findAllByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
-                .map(SavedTourEntity::getTourId)
-                .toList();
-
-        return tourRepository.findAllByIdIn(allSavedTourIdByUserId, pageRequest)
-                .map(TourMapper::toShortInfo);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<TourShortInfo> search(String query, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        return tourRepository.findAllByQuery("%" + query + "%", pageRequest)
+        return tourRepository.findAllByQuery("%" + query.trim().toLowerCase() + "%", pageRequest)
                 .map(TourMapper::toShortInfo);
-    }
-
-    @Transactional
-    public void incrementViewCount(TourEntity tour) {
-        tour.setViewCount(tour.getViewCount() + 1);
-        tourRepository.save(tour);
     }
 }

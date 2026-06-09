@@ -53,6 +53,8 @@ public class BookingEntity {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
+    private Boolean visible = true;
+
     @Column(name = "cancel_reason")
     private String cancelReason;
 }

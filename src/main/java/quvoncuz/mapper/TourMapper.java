@@ -23,7 +23,6 @@ public class TourMapper {
                 .availableSeats(dto.getMaxSeats())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
-                .isActive(true)
                 .viewCount(0L)
                 .rating(0.0)
                 .status(TourStatus.ACTIVE)

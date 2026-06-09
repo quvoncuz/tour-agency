@@ -3,8 +3,10 @@ package quvoncuz.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.click.ClickResponse;
 import quvoncuz.dto.click.CompleteRequest;
 import quvoncuz.dto.click.PrepareRequest;
@@ -13,10 +15,9 @@ import quvoncuz.dto.payment.PaymentResponse;
 import quvoncuz.entities.BookingEntity;
 import quvoncuz.entities.ClickTransactionEntity;
 import quvoncuz.entities.PaymentEntity;
-import quvoncuz.enums.BookingStatus;
-import quvoncuz.enums.ClickErrorCode;
-import quvoncuz.enums.ClickTransactionStatus;
-import quvoncuz.enums.PaymentStatus;
+import quvoncuz.enums.*;
+import quvoncuz.events.helper.NotificationEventHelper;
+import quvoncuz.events.helper.StatisticsEventHelper;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
@@ -28,6 +29,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -36,6 +38,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ClickService {
 
+    private final ApplicationEventPublisher applicationEventPublisher;
     @Value("${click.service-id}")
     private String serviceId;
 
@@ -110,7 +113,7 @@ public class ClickService {
             return buildError(ClickErrorCode.ACTION_NOT_FOUND, request.getMerchantTransId(), null, request.getClickTransId());
         }
 
-        ClickTransactionEntity transaction = new ClickTransactionEntity();
+        ClickTransactionEntity transaction;
 
 
         Optional<ClickTransactionEntity> optionalTransaction = clickTransactionRepository.findFirstByMerchantTransIdOrderByCreatedAtDesc(request.getMerchantTransId());
@@ -231,6 +234,27 @@ public class ClickService {
             bookingRepository.save(booking);
             paymentRepository.save(payment);
             log.info("Bill turned paid status!");
+
+            applicationEventPublisher.publishEvent(
+                    NotificationEventHelper.builder()
+                            .binding(RabbitMQConfig.NOTIFICATION_BOOKING_COMPLETED)
+                            .entityId(booking.getId())
+                            .eventType(EventType.BOOKING_COMPLETED)
+                            .mails(List.of(booking.getUser().getEmail()))
+                            .subjectName(booking.getTour().getTitle())
+                            .dateTime(LocalDateTime.now())
+                            .build()
+            );
+
+            applicationEventPublisher.publishEvent(
+                    StatisticsEventHelper.builder()
+                            .binding(RabbitMQConfig.STATISTICS_BOOKING_COMPLETED)
+                            .entityId(booking.getId())
+                            .superId(booking.getTourId())
+                            .eventType(EventType.BOOKING_COMPLETED)
+                            .dateTime(LocalDateTime.now())
+                            .build());
+
         } catch (Exception e) {
             log.error(transaction.toString());
             return buildError(ClickErrorCode.FAILED_TO_UPDATE_USER, request.getMerchantTransId(), request.getMerchantPrepareId(), request.getClickTransId());
@@ -238,6 +262,8 @@ public class ClickService {
 
         ClickResponse clickResponse = buildSuccess(request.getClickTransId(), request.getMerchantTransId(), transaction.getId().intValue());
         log.info("SUCCESS RESPONSE in Complete-method: {}", clickResponse);
+
+
         return clickResponse;
     }
 

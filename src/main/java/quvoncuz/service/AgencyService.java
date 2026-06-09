@@ -7,17 +7,15 @@ import quvoncuz.entities.AgencyEntity;
 import java.util.Optional;
 
 public interface AgencyService {
-    AgencyDTO applyForAgency(CreateAgencyRequestDTO dto);
+    AgencyDTO applyForAgency(CreateAgencyRequestDTO dto, Long userId);
 
-    Boolean approveAgency(AgencyApproveRequestDTO dto);
+    void approveAgency(AgencyApproveRequestDTO dto);
 
-    Page<AgencyShortInfo> getPendingAgencies(int page, int size);
+    Page<AgencyShortInfo> getAllAgencies(boolean pending, int page, int size);
 
-    Page<AgencyFullInfo> getAllAgencies(int page, int size);
+    AgencyFullInfo update(Long id, Long agencyId, UpdateAgencyRequestDTO dto);
 
-    AgencyFullInfo update(Long agencyId, UpdateAgencyRequestDTO dto);
-
-    Boolean deleteById(Long agencyId);
+    void deleteById(Long agencyId);
 
     AgencyDTO findByAgencyId(Long agencyId);
 

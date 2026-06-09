@@ -7,7 +7,6 @@ import quvoncuz.enums.TourStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "tours")
@@ -54,9 +53,6 @@ public class TourEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "is_active")
-    private Boolean isActive;
-
     @Column(name = "view_count")
     private Long viewCount;
 
@@ -67,13 +63,9 @@ public class TourEntity {
     @Enumerated(EnumType.STRING)
     private TourStatus status;
 
+    private Boolean visible = true;
+
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @OneToMany(mappedBy = "tour")
-    private List<BookingEntity> bookings;
-
-    @OneToMany(mappedBy = "tour")
-    private List<PaymentEntity> payments;
 }

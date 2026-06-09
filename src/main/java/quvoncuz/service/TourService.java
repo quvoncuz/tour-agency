@@ -1,28 +1,25 @@
 package quvoncuz.service;
 
 import org.springframework.data.domain.Page;
-import quvoncuz.dto.tour.CreateTourRequestDTO;
-import quvoncuz.dto.tour.TourFullInfo;
-import quvoncuz.dto.tour.TourShortInfo;
-import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import quvoncuz.dto.tour.*;
 
 public interface TourService {
 
-    TourFullInfo createTour(CreateTourRequestDTO dto);
+    TourFullInfo createTour(CreateTourRequestDTO dto, Long userId);
 
-    TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto);
+    TourFullInfo updateTour(Long tourId, UpdateTourRequestDTO dto, Long userId);
 
-    TourFullInfo updateTourPrice(Long tourId, Long newPrice);
+    void deleteTour(Long tourId, Long userId);
 
-    Boolean deleteTour(Long tourId);
+    void cancelTour(Long tourId, CancelTourDTO reason, Long userId);
 
-    Page<TourShortInfo> getAllTour(int page, int size);
+    Page<TourShortInfo> getAllTourForAdmin(int page, int size);
+
+    Page<TourShortInfo> getAllTourForAgency(Long userId, int page, int size);
 
     Page<TourShortInfo> getAllActiveTour(int page, int size);
 
     TourFullInfo getById(Long id);
-
-    Page<TourShortInfo> getAllSavedTours(int page, int size);
 
     Page<TourShortInfo> search(String query, int page, int size);
 }
