@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.click.ClickResponse;
 import quvoncuz.dto.click.CompleteRequest;
 import quvoncuz.dto.click.PrepareRequest;
@@ -16,8 +15,8 @@ import quvoncuz.entities.BookingEntity;
 import quvoncuz.entities.ClickTransactionEntity;
 import quvoncuz.entities.PaymentEntity;
 import quvoncuz.enums.*;
-import quvoncuz.events.helper.NotificationEventHelper;
-import quvoncuz.events.helper.StatisticsEventHelper;
+import quvoncuz.events.NotificationEvent;
+import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ClickTransactionRepository;
@@ -236,8 +235,7 @@ public class ClickService {
             log.info("Bill turned paid status!");
 
             applicationEventPublisher.publishEvent(
-                    NotificationEventHelper.builder()
-                            .binding(RabbitMQConfig.NOTIFICATION_BOOKING_COMPLETED)
+                    NotificationEvent.builder()
                             .entityId(booking.getId())
                             .eventType(EventType.BOOKING_COMPLETED)
                             .mails(List.of(booking.getUser().getEmail()))
@@ -247,8 +245,7 @@ public class ClickService {
             );
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEventHelper.builder()
-                            .binding(RabbitMQConfig.STATISTICS_BOOKING_COMPLETED)
+                    StatisticsEvent.builder()
                             .entityId(booking.getId())
                             .superId(booking.getTourId())
                             .eventType(EventType.BOOKING_COMPLETED)

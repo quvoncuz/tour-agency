@@ -8,13 +8,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.auth.AuthResponse;
 import quvoncuz.dto.auth.LoginRequestDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.EventType;
-import quvoncuz.events.helper.StatisticsEventHelper;
+import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.ProfileRepository;
@@ -50,8 +49,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("New user registered: {}", profile.getUsername());
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEventHelper.builder()
-                            .binding(RabbitMQConfig.USER_REGISTERED)
+                    StatisticsEvent.builder()
                             .entityId(profile.getId())
                             .eventType(EventType.USER_REGISTERED)
                             .dateTime(LocalDateTime.now())
@@ -69,6 +67,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequestDTO dto) {
+
+        ProfileEntity profile = profileRepository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
         authenticationManager
                 .authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -77,8 +79,6 @@ public class AuthServiceImpl implements AuthService {
                         )
                 );
 
-        ProfileEntity profile = profileRepository.findByUsername(dto.getUsername())
-                .orElseThrow(() -> new NotFoundException("User not found"));
 
         String accessToken = jwtUtil.encodeAccessToken(
                 profile.getUsername(),

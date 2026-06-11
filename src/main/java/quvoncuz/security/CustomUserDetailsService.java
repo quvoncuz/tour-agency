@@ -21,7 +21,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         return CustomUserDetails
                 .builder()
                 .id(profile.getId())
-                .profile(profile)
                 .username(profile.getUsername())
                 .password(profile.getPassword())
                 .role(profile.getRole())

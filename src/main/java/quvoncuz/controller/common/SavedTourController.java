@@ -13,7 +13,7 @@ import quvoncuz.service.SavedTourService;
 import quvoncuz.util.SecurityUtil;
 
 @RestController
-@RequestMapping("/saved-tours")
+@RequestMapping("/favorites")
 @RequiredArgsConstructor
 public class SavedTourController {
 
