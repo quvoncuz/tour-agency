@@ -33,6 +33,7 @@ public class ProfileMapper {
                 .gender(dto.getGender())
                 .isCreatedAgency(false)
                 .isActive(true)
+                .visible(true)
                 .createdAt(LocalDateTime.now())
                 .build();
     }

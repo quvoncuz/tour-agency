@@ -25,6 +25,7 @@ public class TourMapper {
                 .endDate(dto.getEndDate())
                 .viewCount(0L)
                 .rating(0.0)
+                .visible(true)
                 .status(TourStatus.ACTIVE)
                 .createdAt(LocalDateTime.now())
                 .build();

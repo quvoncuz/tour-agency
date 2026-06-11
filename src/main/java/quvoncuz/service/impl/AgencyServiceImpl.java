@@ -8,15 +8,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import quvoncuz.config.RabbitMQConfig;
 import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.EventType;
 import quvoncuz.enums.Role;
-import quvoncuz.events.helper.NotificationEventHelper;
-import quvoncuz.events.helper.StatisticsEventHelper;
+import quvoncuz.events.NotificationEvent;
+import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -92,8 +91,7 @@ public class AgencyServiceImpl implements AgencyService {
             profileRepository.save(profile);
 
             applicationEventPublisher.publishEvent(
-                    NotificationEventHelper.builder()
-                            .binding(RabbitMQConfig.AGENCY_APPROVED)
+                    NotificationEvent.builder()
                             .entityId(agency.getId())
                             .eventType(EventType.AGENCY_APPROVED)
                             .subjectName(agency.getName())
@@ -102,8 +100,7 @@ public class AgencyServiceImpl implements AgencyService {
                             .build());
 
             applicationEventPublisher.publishEvent(
-                    StatisticsEventHelper.builder()
-                            .binding(RabbitMQConfig.AGENCY_CREATED)
+                    StatisticsEvent.builder()
                             .entityId(profile.getId())
                             .eventType(EventType.USER_REGISTERED)
                             .dateTime(LocalDateTime.now())

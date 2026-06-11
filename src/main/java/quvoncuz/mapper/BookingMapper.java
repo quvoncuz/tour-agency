@@ -44,6 +44,7 @@ public class BookingMapper {
                 .status(BookingStatus.PENDING)
                 .note(dto.getNote())
                 .bookedAt(LocalDateTime.now())
+                .visible(true)
                 .build();
     }
 }
