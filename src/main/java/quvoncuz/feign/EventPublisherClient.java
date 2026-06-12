@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import quvoncuz.events.NotificationEvent;
 import quvoncuz.events.StatisticsEvent;
 
-@FeignClient(name = "asistent-service", contextId = "eventPublisherClient")
+@FeignClient(name = "asistent-service", contextId = "eventPublisherClient", fallback = EventPublisherClientFallback.class)
 public interface EventPublisherClient {
 
     @PostMapping("/api/v1/events/notification")

@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 import quvoncuz.enums.Role;
 
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@RefreshScope
 public class JwtUtil {
 
     @Value("${spring.security.jwt.access-key}")

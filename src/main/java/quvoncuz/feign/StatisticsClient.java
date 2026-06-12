@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 
-@FeignClient(name = "asistent-service", contextId = "statisticsClient")
+@FeignClient(name = "asistent-service", contextId = "statisticsClient", fallback = StatisticsClientFallback.class)
 public interface StatisticsClient {
 
     @GetMapping("/api/v1/statistics/agencies")

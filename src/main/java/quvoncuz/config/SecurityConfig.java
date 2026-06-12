@@ -29,7 +29,9 @@ public class SecurityConfig {
 
     private static final String[] WHITE_LIST = {
             "/swagger-ui/**", "/v3/**",
-            "/tours/**", "/favorites"};
+            "/tours/**", "/favorites",
+            "/actuator/**"
+    };
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

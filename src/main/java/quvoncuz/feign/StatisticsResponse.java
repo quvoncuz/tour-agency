@@ -13,4 +13,5 @@ import quvoncuz.enums.EventType;
 public class StatisticsResponse {
     private long count;
     private EventType eventType;
+    private String message;
 }

@@ -3,6 +3,7 @@ package quvoncuz.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@Transactional
+@RefreshScope
 @RequiredArgsConstructor
 public class ClickService {
 
@@ -54,6 +55,7 @@ public class ClickService {
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
 
+    @Transactional
     public PaymentResponse generatePaymentUrl(PaymentRequestDTO request) {
         Long userId = SecurityUtil.getCurrentUserId();
         PaymentEntity payment = paymentRepository
