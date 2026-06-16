@@ -1,7 +1,6 @@
 package quvoncuz.security;
 
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final ProfileRepository profileRepository;
 
     @Override
-    public CustomUserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
+    public CustomUserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         ProfileEntity profile = profileRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return CustomUserDetails
