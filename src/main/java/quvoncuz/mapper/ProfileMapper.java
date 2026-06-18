@@ -28,7 +28,6 @@ public class ProfileMapper {
                 .fullName(dto.getFullName())
                 .username(dto.getUsername())
                 .email(dto.getEmail())
-                .password(dto.getPassword())
                 .role(Role.USER)
                 .gender(dto.getGender())
                 .isCreatedAgency(false)

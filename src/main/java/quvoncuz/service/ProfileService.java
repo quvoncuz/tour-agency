@@ -10,7 +10,7 @@ import quvoncuz.entities.ProfileEntity;
 public interface ProfileService {
     ProfileEntity create(RegistrationRequestDTO dto);
 
-    ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long profileId);
+    ProfileDTO updateProfile(UpdateProfileRequestDTO dto, Long profileId);
 
     void deleteById(Long id);
 

@@ -25,7 +25,7 @@ public class ProfileController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<ProfileFullInfo>> update(
+    public ResponseEntity<ApiResponse<ProfileDTO>> update(
             @Valid @RequestBody UpdateProfileRequestDTO dto) {
         Long userId = SecurityUtil.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.success(profileService.updateProfile(dto, userId)));

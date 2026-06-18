@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
@@ -16,6 +17,7 @@ import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.mapper.ProfileMapper;
 import quvoncuz.repository.ProfileRepository;
+import quvoncuz.security.jwt.JwtUtil;
 import quvoncuz.service.ProfileService;
 
 @Slf4j
@@ -24,12 +26,15 @@ import quvoncuz.service.ProfileService;
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Override
     @Transactional
     public ProfileEntity create(RegistrationRequestDTO dto) {
 
         ProfileEntity profile = ProfileMapper.toEntity(dto);
+        profile.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         profile = profileRepository.save(profile);
 
@@ -39,7 +44,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional
-    public ProfileFullInfo updateProfile(UpdateProfileRequestDTO dto, Long userId) {
+    public ProfileDTO updateProfile(UpdateProfileRequestDTO dto, Long userId) {
 
         try {
             ProfileEntity profile = profileRepository.findById(userId).orElseThrow(() -> new NotFoundException("Profile not found"));
@@ -49,7 +54,12 @@ public class ProfileServiceImpl implements ProfileService {
 
             profile = profileRepository.save(profile);
 
-            return ProfileMapper.toFullInfo(profile);
+            String token = jwtUtil.encodeAccessToken(profile.getUsername(), profile.getRole());
+
+            ProfileDTO profileDTO = ProfileMapper.toDTO(profile);
+            profileDTO.setToken(token);
+
+            return profileDTO;
         } catch (DataIntegrityViolationException e) {
             throw new AlreadyExistsException("Username or Email already exists");
         }
