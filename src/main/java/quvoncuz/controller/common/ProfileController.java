@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import quvoncuz.dto.ApiResponse;
 import quvoncuz.dto.profile.ProfileDTO;
-import quvoncuz.dto.profile.ProfileFullInfo;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.service.ProfileService;
 import quvoncuz.util.SecurityUtil;

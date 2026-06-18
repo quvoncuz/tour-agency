@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.dto.profile.ProfileDTO;
-import quvoncuz.dto.profile.ProfileFullInfo;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.exceptions.AlreadyExistsException;
