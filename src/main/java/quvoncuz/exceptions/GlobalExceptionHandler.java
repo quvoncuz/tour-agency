@@ -4,9 +4,11 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import quvoncuz.dto.ApiResponse;
 
 @Slf4j
@@ -28,6 +30,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PermissionDeniedException.class)
     public ResponseEntity<ApiResponse<?>> handlePermissionDenied(PermissionDeniedException ex) {
         log.warn("Permission denied: {}", ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<?>> handleAuthorizationDeniedException (AuthorizationDeniedException ex) {
+        log.warn("Authorization denied: {}", ex.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
@@ -53,6 +61,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<?>> handleConstraintViolation(ConstraintViolationException ex) {
         log.warn("Constraint violations: {}", ex.getMessage());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<?>> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
+        log.warn("HandlerMethodValidation violations: {}", ex.getMessage());
 
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }

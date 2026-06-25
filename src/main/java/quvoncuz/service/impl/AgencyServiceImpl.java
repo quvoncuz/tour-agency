@@ -90,21 +90,21 @@ public class AgencyServiceImpl implements AgencyService {
             agency.setApproved(true);
             profileRepository.save(profile);
 
-            applicationEventPublisher.publishEvent(
-                    NotificationEvent.builder()
-                            .entityId(agency.getId())
-                            .eventType(EventType.AGENCY_APPROVED)
-                            .subjectName(agency.getName())
-                            .mails(List.of(agency.getEmail()))
-                            .dateTime(LocalDateTime.now())
-                            .build());
-
-            applicationEventPublisher.publishEvent(
-                    StatisticsEvent.builder()
-                            .entityId(profile.getId())
-                            .eventType(EventType.USER_REGISTERED)
-                            .dateTime(LocalDateTime.now())
-                            .build());
+//            applicationEventPublisher.publishEvent(
+//                    NotificationEvent.builder()
+//                            .entityId(agency.getId())
+//                            .eventType(EventType.AGENCY_APPROVED)
+//                            .subjectName(agency.getName())
+//                            .mails(List.of(agency.getEmail()))
+//                            .dateTime(LocalDateTime.now())
+//                            .build());
+//
+//            applicationEventPublisher.publishEvent(
+//                    StatisticsEvent.builder()
+//                            .entityId(profile.getId())
+//                            .eventType(EventType.USER_REGISTERED)
+//                            .dateTime(LocalDateTime.now())
+//                            .build());
 
         } else {
             agency.setStatus(AgencyStatus.REJECTED);

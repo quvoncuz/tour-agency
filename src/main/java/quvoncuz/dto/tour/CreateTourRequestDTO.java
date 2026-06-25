@@ -27,6 +27,4 @@ public class CreateTourRequestDTO {
     private int maxSeats;
     @NotNull(message = "Starting date is mandatory")
     private LocalDate startDate;
-    @NotNull(message = "End date is mandatory")
-    private LocalDate endDate;
 }

@@ -60,22 +60,22 @@ public class TourServiceImpl implements TourService {
 
         List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
 
-        applicationEventPublisher.publishEvent(
-                NotificationEvent.builder()
-                        .entityId(tour.getId())
-                        .eventType(EventType.TOUR_CREATED)
-                        .subjectName(tour.getTitle())
-                        .mails(allUserEmailBookedByAgency)
-                        .dateTime(LocalDateTime.now())
-                        .build());
-
-        applicationEventPublisher.publishEvent(
-                StatisticsEvent.builder()
-                        .entityId(tour.getId())
-                        .superId(tour.getAgencyId())
-                        .eventType(EventType.TOUR_CREATED)
-                        .dateTime(LocalDateTime.now())
-                        .build());
+//        applicationEventPublisher.publishEvent(
+//                NotificationEvent.builder()
+//                        .entityId(tour.getId())
+//                        .eventType(EventType.TOUR_CREATED)
+//                        .subjectName(tour.getTitle())
+//                        .mails(allUserEmailBookedByAgency)
+//                        .dateTime(LocalDateTime.now())
+//                        .build());
+//
+//        applicationEventPublisher.publishEvent(
+//                StatisticsEvent.builder()
+//                        .entityId(tour.getId())
+//                        .superId(tour.getAgencyId())
+//                        .eventType(EventType.TOUR_CREATED)
+//                        .dateTime(LocalDateTime.now())
+//                        .build());
 
         return TourMapper.toFullInfo(tour);
     }
@@ -104,7 +104,7 @@ public class TourServiceImpl implements TourService {
         tour.setPrice(dto.getPrice());
         tour.setMaxSeats(dto.getMaxSeats());
         tour.setStartDate(dto.getStartDate());
-        tour.setEndDate(dto.getEndDate());
+        tour.setEndDate(dto.getStartDate().plusDays(dto.getDurationDays()));
 
         tourRepository.save(tour);
 
@@ -120,14 +120,14 @@ public class TourServiceImpl implements TourService {
 
             bookingRepository.saveAll(bookings);
 
-            applicationEventPublisher.publishEvent(
-                    NotificationEvent.builder()
-                            .entityId(tour.getId())
-                            .eventType(EventType.TOUR_UPDATED)
-                            .subjectName(tour.getTitle())
-                            .mails(allEmailByTourIdAndStatus)
-                            .dateTime(LocalDateTime.now())
-                            .build());
+//            applicationEventPublisher.publishEvent(
+//                    NotificationEvent.builder()
+//                            .entityId(tour.getId())
+//                            .eventType(EventType.TOUR_UPDATED)
+//                            .subjectName(tour.getTitle())
+//                            .mails(allEmailByTourIdAndStatus)
+//                            .dateTime(LocalDateTime.now())
+//                            .build());
         }
 
         return TourMapper.toFullInfo(tour);
@@ -160,14 +160,14 @@ public class TourServiceImpl implements TourService {
 
         tourRepository.save(tour);
 
-        applicationEventPublisher.publishEvent(
-                NotificationEvent.builder()
-                        .entityId(tour.getId())
-                        .eventType(EventType.TOUR_CANCELED)
-                        .subjectName(tour.getTitle())
-                        .mails(mails)
-                        .dateTime(LocalDateTime.now())
-                        .build());
+//        applicationEventPublisher.publishEvent(
+//                NotificationEvent.builder()
+//                        .entityId(tour.getId())
+//                        .eventType(EventType.TOUR_CANCELED)
+//                        .subjectName(tour.getTitle())
+//                        .mails(mails)
+//                        .dateTime(LocalDateTime.now())
+//                        .build());
     }
 
     @Override

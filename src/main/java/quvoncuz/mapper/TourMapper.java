@@ -22,7 +22,7 @@ public class TourMapper {
                 .maxSeats(dto.getMaxSeats())
                 .availableSeats(dto.getMaxSeats())
                 .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
+                .endDate(dto.getStartDate().plusDays(dto.getDurationDays()))
                 .viewCount(0L)
                 .rating(0.0)
                 .visible(true)

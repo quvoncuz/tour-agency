@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
 
-    List<PaymentEntity> findByBookingIdAndUserIdOrderByCreatedAtDesc(Long bookingId, Long userId);
+    List<PaymentEntity> findAllByBookingIdAndUserIdOrderByCreatedAtDesc(Long bookingId, Long userId);
 
     Optional<PaymentEntity> findByUserIdAndTourIdAndBookingIdAndStatusIs(Long userId, Long tourId, Long bookingId, PaymentStatus paymentStatus);
 

@@ -127,13 +127,14 @@ public class BookingServiceImpl implements BookingService {
     public Page<BookingShortInfo> findAllForAgency(Long tourId, Long userId, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page - 1, size);
 
-        TourEntity tour = tourRepository.findById(tourId)
-                .orElseThrow(() -> new NotFoundException("Tour not found"));
-        if (!tour.getAgencyId().equals(userId)) {
-            throw new DoNotMatchException("You don't have permission");
-        }
         Page<BookingEntity> pageResult;
+
         if (tourId != 0) {
+            TourEntity tour = tourRepository.findById(tourId)
+                    .orElseThrow(() -> new NotFoundException("Tour not found"));
+            if (!tour.getAgencyId().equals(userId)) {
+                throw new DoNotMatchException("You don't have permission");
+            }
             pageResult = bookingRepository.findAllByTourId(tourId, pageRequest);
         } else {
             pageResult = bookingRepository.findAllByAgencyId(userId, pageRequest);
@@ -169,10 +170,6 @@ public class BookingServiceImpl implements BookingService {
         } else {
             booking.setStatus(BookingStatus.CANCELED);
             TourEntity tour = tourRepository.findByIdWithLock(booking.getTourId()).orElseThrow(() -> new NotFoundException("Tour not found"));
-
-            if (tour.getStartDate().isBefore(LocalDate.now())) {
-                throw new DoNotMatchException("Tour is not active");
-            }
 
             tour.setAvailableSeats(tour.getAvailableSeats() + booking.getSeatsBooked());
             if (tour.getStatus() == TourStatus.SOLD_OUT) {
@@ -216,7 +213,7 @@ public class BookingServiceImpl implements BookingService {
             throw new DoNotMatchException("You cannot cancel started tour");
         }
 
-        List<PaymentEntity> payments = paymentRepository.findByBookingIdAndUserIdOrderByCreatedAtDesc(booking.getId(), userId);
+        List<PaymentEntity> payments = paymentRepository.findAllByBookingIdAndUserIdOrderByCreatedAtDesc(booking.getId(), userId);
 
         if (payments.isEmpty()) {
             throw new NotFoundException("Payments not found");
@@ -269,7 +266,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NotFoundException("Tour not found!"));
 
         PaymentEntity payment = paymentRepository
-                .findByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, userId)
+                .findAllByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, userId)
                 .stream().findFirst()
                 .orElseThrow(() -> new NotFoundException("Payment not found"));
 

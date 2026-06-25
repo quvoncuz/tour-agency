@@ -2,7 +2,6 @@ package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,16 +11,12 @@ import quvoncuz.dto.auth.AuthResponse;
 import quvoncuz.dto.auth.LoginRequestDTO;
 import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
-import quvoncuz.enums.EventType;
-import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.security.jwt.JwtUtil;
 import quvoncuz.service.AuthService;
 import quvoncuz.service.ProfileService;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -32,7 +27,7 @@ public class AuthServiceImpl implements AuthService {
     private final ProfileRepository profileRepository;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final ApplicationEventPublisher applicationEventPublisher;
+//    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -48,12 +43,12 @@ public class AuthServiceImpl implements AuthService {
 
             log.info("New user registered: {}", profile.getUsername());
 
-            applicationEventPublisher.publishEvent(
-                    StatisticsEvent.builder()
-                            .entityId(profile.getId())
-                            .eventType(EventType.USER_REGISTERED)
-                            .dateTime(LocalDateTime.now())
-                            .build());
+//            applicationEventPublisher.publishEvent(
+//                    StatisticsEvent.builder()
+//                            .entityId(profile.getId())
+//                            .eventType(EventType.USER_REGISTERED)
+//                            .dateTime(LocalDateTime.now())
+//                            .build());
 
             return AuthResponse.builder()
                     .username(profile.getUsername())
