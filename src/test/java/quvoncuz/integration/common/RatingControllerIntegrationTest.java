@@ -19,6 +19,7 @@ import quvoncuz.entities.*;
 import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.RatingType;
 import quvoncuz.enums.Role;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.*;
 import quvoncuz.util.SecurityUtil;
 
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class RatingControllerIntegrationTest {
+class RatingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

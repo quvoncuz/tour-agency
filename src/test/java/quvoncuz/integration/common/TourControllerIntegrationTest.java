@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.TourRepository;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.mockStatic;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class TourControllerIntegrationTest {
+class TourControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

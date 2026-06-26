@@ -25,6 +25,7 @@ import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.PaymentStatus;
 import quvoncuz.enums.Role;
 import quvoncuz.enums.TourStatus;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.PaymentRepository;
 import quvoncuz.repository.ProfileRepository;
@@ -47,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class BookingControllerIntegrationTest {
+class BookingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

@@ -15,6 +15,7 @@ import quvoncuz.dto.auth.RegistrationRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Gender;
 import quvoncuz.enums.Role;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.ProfileRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class AuthControllerIntegrationTest {
+class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;

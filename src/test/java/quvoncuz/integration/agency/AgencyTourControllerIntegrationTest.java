@@ -25,6 +25,7 @@ import quvoncuz.enums.BookingStatus;
 import quvoncuz.enums.Role;
 import quvoncuz.enums.TourStatus;
 import quvoncuz.exceptions.NotFoundException;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.ProfileRepository;
@@ -45,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class AgencyTourControllerIntegrationTest {
+class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;

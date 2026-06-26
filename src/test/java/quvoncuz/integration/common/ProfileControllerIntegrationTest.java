@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.Role;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.util.SecurityUtil;
 
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class ProfileControllerIntegrationTest {
+class ProfileControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

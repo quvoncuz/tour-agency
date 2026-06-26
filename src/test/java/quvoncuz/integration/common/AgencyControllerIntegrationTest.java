@@ -18,6 +18,7 @@ import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.Role;
+import quvoncuz.integration.BaseIntegrationTest;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.util.SecurityUtil;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-class AgencyControllerIntegrationTest {
+class AgencyControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
