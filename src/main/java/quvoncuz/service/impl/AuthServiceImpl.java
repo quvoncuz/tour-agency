@@ -34,8 +34,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegistrationRequestDTO dto) {
 
         try {
-            ProfileEntity profile;
-            profile = profileService.create(dto);
+            ProfileEntity profile = profileService.create(dto);
             String accessToken = jwtUtil.encodeAccessToken(
                     profile.getUsername(),
                     profile.getRole()

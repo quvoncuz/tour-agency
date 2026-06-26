@@ -12,10 +12,7 @@ import quvoncuz.entities.BookingEntity;
 import quvoncuz.entities.TourEntity;
 import quvoncuz.enums.AgencyStatus;
 import quvoncuz.enums.BookingStatus;
-import quvoncuz.enums.EventType;
 import quvoncuz.enums.TourStatus;
-import quvoncuz.events.NotificationEvent;
-import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
 import quvoncuz.exceptions.PermissionDeniedException;
@@ -26,7 +23,6 @@ import quvoncuz.repository.TourRepository;
 import quvoncuz.service.AgencyService;
 import quvoncuz.service.TourService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -58,7 +54,7 @@ public class TourServiceImpl implements TourService {
 
         tour = tourRepository.save(tour);
 
-        List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
+//        List<String> allUserEmailBookedByAgency = bookingRepository.findAllUserEmailBookedByAgency(tour.getAgencyId());
 
 //        applicationEventPublisher.publishEvent(
 //                NotificationEvent.builder()
@@ -116,7 +112,7 @@ public class TourServiceImpl implements TourService {
                 booking.setStatus(BookingStatus.ON_UPDATE);
             });
 
-            List<String> allEmailByTourIdAndStatus = bookingRepository.findAllEmailByTourIdAndStatus(tourId, BookingStatus.PENDING);
+//            List<String> allEmailByTourIdAndStatus = bookingRepository.findAllEmailByTourIdAndStatus(tourId, BookingStatus.PENDING);
 
             bookingRepository.saveAll(bookings);
 
@@ -152,9 +148,9 @@ public class TourServiceImpl implements TourService {
         List<BookingEntity> bookings = bookingRepository.findAllByTourId(tourId);
         bookings.forEach(booking -> booking.setStatus(BookingStatus.CANCELED));
 
-        List<String> mails = bookings.stream()
-                .map(booking -> booking.getUser().getEmail())
-                .toList();
+//        List<String> mails = bookings.stream()
+//                .map(booking -> booking.getUser().getEmail())
+//                .toList();
 
         bookingRepository.saveAll(bookings);
 

@@ -32,13 +32,17 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional
     public ProfileEntity create(RegistrationRequestDTO dto) {
 
-        ProfileEntity profile = ProfileMapper.toEntity(dto);
-        profile.setPassword(passwordEncoder.encode(dto.getPassword()));
+        try {
+            ProfileEntity profile = ProfileMapper.toEntity(dto);
+            profile.setPassword(passwordEncoder.encode(dto.getPassword()));
 
-        profile = profileRepository.save(profile);
+            profile = profileRepository.save(profile);
+            log.info("Created new profile with username: {}", profile.getUsername());
+            return profile;
+        } catch (DataIntegrityViolationException e) {
+            throw new AlreadyExistsException(e.getMessage());
+        }
 
-        log.info("Created new profile with username: {}", profile.getUsername());
-        return profile;
     }
 
     @Override
