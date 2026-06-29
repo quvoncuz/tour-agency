@@ -23,6 +23,7 @@ import quvoncuz.repository.BookingRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.impl.TourServiceImpl;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +80,7 @@ class TourServiceTest {
         dto.setTitle("Samarkand Tour");
         dto.setMaxSeats(50);
         dto.setDurationDays(3);
+        dto.setStartDate(LocalDate.now().plusDays(5));
         dto.setPrice(300);
 
 
@@ -134,6 +136,7 @@ class TourServiceTest {
 
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
         dto.setTitle("Updated Tashkent Tour");
+        dto.setStartDate(LocalDate.now().plusDays(5));
         dto.setPrice(600L);
 
         BookingEntity booking = new BookingEntity();

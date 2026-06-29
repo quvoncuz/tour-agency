@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,23 +62,22 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
     private ProfileRepository profileRepository;
 
     private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
-    private static final Long AGENCY_ID = 1L;
-    private static final Long TOUR_ID = 1L;
+    private static Long USER_ID = 1L;
+    private static Long AGENCY_ID = 1L;
+    private static Long TOUR_ID = 1L;
     @Autowired
     private BookingRepository bookingRepository;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
 
         ProfileEntity profile = new ProfileEntity();
         profile.setEmail("agency@mail.com");
         profile.setRole(Role.AGENCY);
         profile.setIsActive(true);
         profile.setVisible(true);
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
+        USER_ID = profile.getId();
 
         AgencyEntity agency = new AgencyEntity();
         agency.setId(USER_ID);
@@ -88,8 +88,11 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
         agency.setCity("Tashkent");
         agency.setStatus(AgencyStatus.ACCEPTED);
         agency.setVisible(true);
-        agencyRepository.save(agency);
+        agency = agencyRepository.save(agency);
+        AGENCY_ID = agency.getId();
 
+        mockedStatic = mockStatic(SecurityUtil.class);
+        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
     }
 
     @AfterEach
@@ -169,7 +172,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                 .title("qwerty")
                 .price(100L)
                 .build();
-        tourRepository.save(tour);
+        tour = tourRepository.save(tour);
 
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
         dto.setTitle("qwerty");
@@ -180,10 +183,11 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
         dto.setDestination("wdewbeth");
         dto.setDescription("dqefwerth");
 
-        mockMvc.perform(put("/agency/tours/{tourId}", TOUR_ID)
+        mockMvc.perform(put("/agency/tours/{tourId}", tour.getId())
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("qwerty"))
                 .andExpect(jsonPath("$.data.durationDays").value(10));
@@ -242,11 +246,12 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                 .title("qwerty")
                 .price(100L)
                 .build();
-        tourRepository.save(tour);
+        tour = tourRepository.save(tour);
+        TOUR_ID = tour.getId();
 
         BookingEntity booking = BookingEntity.builder()
                 .userId(USER_ID)
-                .tourId(TOUR_ID)
+                .tourId(tour.getId())
                 .status(BookingStatus.CONFIRMED)
                 .build();
         bookingRepository.save(booking);
@@ -255,6 +260,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andDo(print())
                 .andExpect(status().isNoContent());
 
         tour = tourRepository.findById(TOUR_ID).orElseThrow(() -> new NotFoundException("T"));

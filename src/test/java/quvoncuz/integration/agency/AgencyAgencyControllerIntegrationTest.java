@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.agency.UpdateAgencyRequestDTO;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
@@ -26,12 +27,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class AgencyAgencyControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -45,20 +48,19 @@ class AgencyAgencyControllerIntegrationTest extends BaseIntegrationTest {
     private ProfileRepository profileRepository;
 
     private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
-    private static final Long AGENCY_ID = 1L;
+    private static Long USER_ID = 1L;
+    private static Long AGENCY_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
 
         ProfileEntity profile = new ProfileEntity();
         profile.setEmail("agency@mail.com");
         profile.setRole(Role.AGENCY);
         profile.setIsActive(true);
         profile.setVisible(true);
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
+        USER_ID = profile.getId();
 
         AgencyEntity agency = new AgencyEntity();
         agency.setId(USER_ID);
@@ -69,8 +71,11 @@ class AgencyAgencyControllerIntegrationTest extends BaseIntegrationTest {
         agency.setCity("Tashkent");
         agency.setStatus(AgencyStatus.ACCEPTED);
         agency.setVisible(true);
-        agencyRepository.save(agency);
+        agency = agencyRepository.save(agency);
+        AGENCY_ID = agency.getId();
 
+        mockedStatic = mockStatic(SecurityUtil.class);
+        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
     }
 
     @AfterEach
@@ -108,18 +113,18 @@ class AgencyAgencyControllerIntegrationTest extends BaseIntegrationTest {
         profile.setRole(Role.AGENCY);
         profile.setIsActive(true);
         profile.setVisible(true);
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
 
         AgencyEntity agency = new AgencyEntity();
-        agency.setId(2L);
-        agency.setOwnerId(2L);
+        agency.setId(profile.getId());
+        agency.setOwnerId(profile.getId());
         agency.setName("Tes Agency");
         agency.setPhone("99909009090");
         agency.setEmail("emal@gmail.com");
         agency.setCity("Tashkent");
         agency.setStatus(AgencyStatus.ACCEPTED);
         agency.setVisible(true);
-        agencyRepository.save(agency);
+        agency = agencyRepository.save(agency);
 
         UpdateAgencyRequestDTO dto = new UpdateAgencyRequestDTO();
         dto.setName("qwerty");
@@ -129,10 +134,11 @@ class AgencyAgencyControllerIntegrationTest extends BaseIntegrationTest {
         dto.setCity("qwerty");
         dto.setAddress("qwerty");
 
-        mockMvc.perform(put("/agency/agencies/{agencyId}", 2)
+        mockMvc.perform(put("/agency/agencies/{agencyId}", agency.getId())
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 }

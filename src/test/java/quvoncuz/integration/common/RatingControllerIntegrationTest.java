@@ -13,6 +13,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.rating.RatingRequestDTO;
 import quvoncuz.dto.rating.UpdateRatingRequestDTO;
 import quvoncuz.entities.*;
@@ -34,6 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class RatingControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -66,6 +68,7 @@ class RatingControllerIntegrationTest extends BaseIntegrationTest {
                 .visible(true)
                 .build();
         savedProfile = profileRepository.save(profile);
+        USER_ID = savedProfile.getId();
 
         AgencyEntity agency = AgencyEntity.builder()
                 .id(savedProfile.getId())
@@ -198,7 +201,7 @@ class RatingControllerIntegrationTest extends BaseIntegrationTest {
                 .build();
         savedProfile = profileRepository.save(profile);
         RatingEntity rating = RatingEntity.builder()
-                .userId(2L)
+                .userId(savedProfile.getId())
                 .sourceId(savedTour.getId())
                 .type(RatingType.TOUR)
                 .stars(4)

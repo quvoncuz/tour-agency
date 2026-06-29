@@ -50,6 +50,7 @@ class TourControllerIntegrationTest extends BaseIntegrationTest {
                 .visible(true)
                 .build();
         savedProfile = profileRepository.save(profile);
+        USER_ID = savedProfile.getId();
 
         AgencyEntity agency = AgencyEntity.builder()
                 .id(savedProfile.getId())

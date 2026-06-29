@@ -47,20 +47,22 @@ class AgencyControllerIntegrationTest extends BaseIntegrationTest {
     private ProfileRepository profileRepository;
 
     private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
-    private static final Long AGENCY_ID = 1L;
+    private static Long USER_ID = 1L;
+    private static Long AGENCY_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
 
         ProfileEntity profile = new ProfileEntity();
         profile.setEmail("user@mail.com");
         profile.setRole(Role.USER);
         profile.setIsActive(true);
         profile.setVisible(true);
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
+        USER_ID = profile.getId();
+
+        mockedStatic = mockStatic(SecurityUtil.class);
+        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
     }
 
     @AfterEach

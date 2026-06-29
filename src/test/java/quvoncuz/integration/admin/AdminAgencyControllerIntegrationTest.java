@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import quvoncuz.dto.agency.AgencyApproveRequestDTO;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class AdminAgencyControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -73,8 +75,8 @@ class AdminAgencyControllerIntegrationTest extends BaseIntegrationTest {
         dto.setApprove(true);
 
         AgencyEntity agency = AgencyEntity.builder()
-                .id(savedProfile.getId())
-                .ownerId(savedProfile.getId())
+                .id(USER_ID)
+                .ownerId(USER_ID)
                 .name("Qwerty")
                 .phone("9999999999")
                 .status(AgencyStatus.PENDING)

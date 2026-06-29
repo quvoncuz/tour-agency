@@ -180,10 +180,6 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithMockUser
     void cancelBooking_Success() throws Exception {
-        CancelBookingRequestDTO dto = new CancelBookingRequestDTO();
-        dto.setBookingId(1L);
-        dto.setCancelReason("Just kidding");
-
         BookingEntity booking = BookingEntity.builder()
                 .userId(USER_ID)
                 .tourId(TOUR_ID)
@@ -195,12 +191,16 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
                 .bookedAt(LocalDateTime.now())
                 .visible(true)
                 .build();
-        bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
+
+        CancelBookingRequestDTO dto = new CancelBookingRequestDTO();
+        dto.setBookingId(booking.getId());
+        dto.setCancelReason("Just kidding");
 
         PaymentEntity payment1 = PaymentEntity.builder()
                 .userId(USER_ID)
                 .tourId(TOUR_ID)
-                .bookingId(1L)
+                .bookingId(booking.getId())
                 .amount(300L)
                 .status(PaymentStatus.PAID)
                 .createdAt(LocalDateTime.now())
@@ -210,7 +210,7 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
         PaymentEntity payment2 = PaymentEntity.builder()
                 .userId(USER_ID)
                 .tourId(TOUR_ID)
-                .bookingId(1L)
+                .bookingId(booking.getId())
                 .amount(200L)
                 .status(PaymentStatus.PENDING)
                 .createdAt(LocalDateTime.now())
@@ -291,19 +291,19 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
                 .bookedAt(LocalDateTime.now())
                 .visible(true)
                 .build();
-        bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
 
         PaymentEntity payment = PaymentEntity.builder()
                 .userId(USER_ID)
                 .tourId(TOUR_ID)
-                .bookingId(1L)
+                .bookingId(booking.getId())
                 .amount(500L)
                 .status(PaymentStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
         paymentRepository.save(payment);
 
-        mockMvc.perform(patch("/bookings/{bookingId}", 1L)
+        mockMvc.perform(patch("/bookings/{bookingId}", booking.getId())
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -311,7 +311,7 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk());
 //                .andExpect(jsonPath("$.data.status").value(BookingStatus.CANCELED));
 
-        booking = bookingRepository.findById(1L).orElseThrow();
+        booking = bookingRepository.findById(booking.getId()).orElseThrow();
 
         assertEquals(BookingStatus.CANCELED, booking.getStatus());
 

@@ -60,7 +60,8 @@ class ProfileControllerIntegrationTest extends BaseIntegrationTest {
                 .isActive(true)
                 .visible(true)
                 .build();
-        profileRepository.save(profile);
+        profile = profileRepository.save(profile);
+        USER_ID = profile.getId();
 
         mockedStatic = mockStatic(SecurityUtil.class);
         mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);

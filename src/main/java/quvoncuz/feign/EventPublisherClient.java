@@ -1,13 +1,13 @@
 package quvoncuz.feign;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import org.springframework.cloud.openfeign.FeignClient;
+//import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import quvoncuz.events.NotificationEvent;
 import quvoncuz.events.StatisticsEvent;
 
-@FeignClient(name = "asistent-service", contextId = "eventPublisherClient", fallback = EventPublisherClientFallback.class)
+//@FeignClient(name = "asistent-service", contextId = "eventPublisherClient", fallback = EventPublisherClientFallback.class)
 public interface EventPublisherClient {
 
     @PostMapping("/api/v1/events/notification")
