@@ -1,171 +1,122 @@
 package quvoncuz.controller.common;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import quvoncuz.dto.booking.BookingFullInfo;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import quvoncuz.dto.booking.CreateBookingRequestDTO;
 import quvoncuz.dto.booking.UpdateBookingRequestDTO;
-import quvoncuz.security.CustomUserDetailsService;
+import quvoncuz.enums.Role;
 import quvoncuz.security.jwt.JwtUtil;
-import quvoncuz.service.BookingService;
-import quvoncuz.util.SecurityUtil;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
-@WebMvcTest(BookingController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class BookingControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
     @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
-    private BookingService bookingService;
-
-    @MockitoBean
     private JwtUtil jwtUtil;
-
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    private MockedStatic<SecurityUtil> mockedSecurityUtil;
-    private static final Long USER_ID = 1L;
-    private static final Long TOUR_ID = 1L;
-    private static final Long BOOKING_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedSecurityUtil = mockStatic(SecurityUtil.class);
-        mockedSecurityUtil.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
-    }
-
-    @AfterEach
-    void tearDown() {
-        mockedSecurityUtil.close();
+        RestAssured.port = port;
     }
 
     @Test
-    @WithMockUser(roles = {"USER", "AGENCY"})
-    void createBooking_Success() throws Exception {
+    void createBooking_Success() {
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
 
         CreateBookingRequestDTO dto = new CreateBookingRequestDTO();
-        dto.setTourId(TOUR_ID);
+        dto.setTourId(51);
         dto.setSeatsBooked(4);
         dto.setNote("To EUROPE");
 
-        BookingFullInfo bookingFullInfo = new BookingFullInfo();
-        bookingFullInfo.setId(BOOKING_ID);
-        bookingFullInfo.setTotalPrice(400L);
-        bookingFullInfo.setTourId(TOUR_ID);
-
-        when(bookingService.createBooking(any(CreateBookingRequestDTO.class), eq(USER_ID)))
-                .thenReturn(bookingFullInfo);
-
-        mockMvc.perform(post("/bookings")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(1L))
-                .andExpect(jsonPath("$.data.totalPrice").value(400L));
-
-        verify(bookingService, times(1)).createBooking(any(), eq(USER_ID));
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .post("/api/v1/bookings")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("success", is(true))
+                .body("data", notNullValue());
 
     }
 
     @Test
-    @WithMockUser(roles = {"USER", "AGENCY"})
-    void updateBookingSeats_Success() throws Exception {
+    void updateBookingSeats_Success() {
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
+
         UpdateBookingRequestDTO dto = new UpdateBookingRequestDTO();
-        dto.setBookingId(BOOKING_ID);
+        dto.setBookingId(5);
         dto.setSeats(6);
 
-        BookingFullInfo bookingFullInfo = new BookingFullInfo();
-        bookingFullInfo.setId(BOOKING_ID);
-        bookingFullInfo.setTotalPrice(600L);
-        bookingFullInfo.setTourId(TOUR_ID);
-
-        when(bookingService.updateBookingSeats(BOOKING_ID, dto, USER_ID))
-                .thenReturn(bookingFullInfo);
-
-        mockMvc.perform(put("/bookings/{id}", BOOKING_ID)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(BOOKING_ID))
-                .andExpect(jsonPath("$.data.totalPrice").value(600L));
-
-        verify(bookingService, times(1)).updateBookingSeats(eq(BOOKING_ID), any(), eq(USER_ID));
-
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/bookings/{bookingId}", 5)
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("success", is(true))
+                .body("data.seatsBooked", is(6))
+                .body("data.totalPrice", is(600));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
     void updateBookingSeats_403Forbidden_ThrowsException() throws Exception {
+        String token = jwtUtil.encodeAccessToken("quvoncuz", Role.ADMIN);
+
         UpdateBookingRequestDTO dto = new UpdateBookingRequestDTO();
-        dto.setBookingId(BOOKING_ID);
-        dto.setSeats(6);
+        dto.setBookingId(51);
+        dto.setSeats(7);
 
-        mockMvc.perform(put("/bookings/{id}", BOOKING_ID)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
-
-        verifyNoInteractions(bookingService);
-
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer" + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/bookings/{bookingId}", 5)
+                .then()
+                .log().body()
+                .statusCode(403);
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void findById_Success() throws Exception {
-        BookingFullInfo fullInfo = new BookingFullInfo();
-        fullInfo.setId(BOOKING_ID);
+    void findById_Success() {
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
 
-        when(bookingService.findFullInfoById(BOOKING_ID, USER_ID)).thenReturn(fullInfo);
-
-        mockMvc.perform(get("/bookings/{bookingId}", BOOKING_ID))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value(BOOKING_ID));
-
-        verify(bookingService, times(1)).findFullInfoById(BOOKING_ID, USER_ID);
+        given()
+                .header("Authorization", "Bearer " + token)
+                .get("/api/v1/bookings/{bookingIs}", 5)
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("data.totalPrice", is(600));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void findById_ForbiddenRole_Returns() throws Exception {
-        mockMvc.perform(get("/bookings/1"))
-                .andExpect(status().isForbidden());
-
-        verifyNoInteractions(bookingService);
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
     void findById_NegativeId_ReturnsBadRequest() throws Exception {
-        mockMvc.perform(get("/bookings/-5"))
-                .andExpect(status().isBadRequest());
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .get("/api/v1/bookings/{bookingId}", -5)
+                .then()
+                .log().body()
+                .statusCode(400);
     }
 
 

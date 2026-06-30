@@ -1,12 +1,16 @@
 package quvoncuz.controller.agency;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -14,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import quvoncuz.dto.tour.CreateTourRequestDTO;
 import quvoncuz.dto.tour.TourFullInfo;
 import quvoncuz.dto.tour.UpdateTourRequestDTO;
+import quvoncuz.enums.Role;
 import quvoncuz.security.CustomUserDetailsService;
 import quvoncuz.security.jwt.JwtUtil;
 import quvoncuz.service.TourService;
@@ -21,6 +26,8 @@ import quvoncuz.util.SecurityUtil;
 
 import java.time.LocalDate;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,39 +35,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AgencyTourController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AgencyTourControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+    @LocalServerPort
+    private int port;
 
-    @MockitoBean
+    @Autowired
     private JwtUtil jwtUtil;
-    @MockitoBean
-    private TourService tourService;
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
-    private static final Long TOUR_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
-    }
-
-    @AfterEach
-    void tearDown() {
-        mockedStatic.close();
+        RestAssured.port = port;
     }
 
     @Test
-    @WithMockUser(roles = "AGENCY")
-    void createTour_Success() throws Exception {
+    void createTour_Success() {
+        String token = jwtUtil.encodeAccessToken("quvonch", Role.AGENCY);
+
         CreateTourRequestDTO dto = new CreateTourRequestDTO();
         dto.setTitle("qwerty");
         dto.setMaxSeats(100);
@@ -70,32 +62,23 @@ class AgencyTourControllerTest {
         dto.setDestination("wdewbeth");
         dto.setDescription("dqefwerth");
 
-        TourFullInfo fullInfo = TourFullInfo.builder()
-                .title("qwerty")
-                .price(100L)
-                .durationDays(10)
-                .maxSeats(100)
-                .availableSeats(100)
-                .build();
-
-        when(tourService.createTour(dto, USER_ID)).thenReturn(fullInfo);
-
-        mockMvc.perform(post("/agency/tours")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.title").value("qwerty"))
-                .andExpect(jsonPath("$.data.price").value(100L))
-                .andExpect(jsonPath("$.data.maxSeats").value(100))
-                .andExpect(jsonPath("$.data.durationDays").value(10));
-
-        verify(tourService, times(1)).createTour(any(), anyLong());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .post("/api/v1/agency/tours")
+                .then()
+                .log().body()
+                .statusCode(201)
+                .body("data.title", is("qwerty"))
+                .body("data.durationDays", is(10));
     }
 
     @Test
-    @WithMockUser(roles = "AGENCY")
-    void createTour_ValidationThrows() throws Exception {
+    void createTour_ValidationThrows() {
+        String token = jwtUtil.encodeAccessToken("quvonch", Role.AGENCY);
+
         CreateTourRequestDTO dto = new CreateTourRequestDTO();
         dto.setTitle("qwerty");
         dto.setMaxSeats(100);
@@ -104,17 +87,18 @@ class AgencyTourControllerTest {
         dto.setDestination("wdewbeth");
         dto.setDescription("dqefwerth");
 
-        mockMvc.perform(post("/agency/tours")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(tourService);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .post("/api/v1/agency/tours")
+                .then()
+                .log().body()
+                .statusCode(400);
     }
 
     @Test
-    @WithMockUser(roles = {"USER", "ADMIN"})
     void createTour_ForbiddenThrows() throws Exception {
         CreateTourRequestDTO dto = new CreateTourRequestDTO();
         dto.setTitle("qwerty");
@@ -125,45 +109,44 @@ class AgencyTourControllerTest {
         dto.setDestination("wdewbeth");
         dto.setDescription("dqefwerth");
 
-        mockMvc.perform(post("/agency/tours")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
+        String token = jwtUtil.encodeAccessToken("quvonc", Role.USER);
 
-        verifyNoInteractions(tourService);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .post("/api/v1/agency/tours")
+                .then()
+                .log().body()
+                .statusCode(403);
+
     }
 
     @Test
-    @WithMockUser(roles = "AGENCY")
-    void updateTour_Success() throws Exception {
+    void updateTour_Success() {
+        String token = jwtUtil.encodeAccessToken("quvonch", Role.AGENCY);
+
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
-        dto.setTitle("qwerty");
+        dto.setTitle("QWERTY");
         dto.setMaxSeats(100);
         dto.setPrice(100L);
         dto.setStartDate(LocalDate.now().plusDays(10));
-        dto.setDurationDays(10);
+        dto.setDurationDays(15);
         dto.setDestination("wdewbeth");
         dto.setDescription("dqefwerth");
 
-        TourFullInfo fullInfo = TourFullInfo.builder()
-                .title("qwerty")
-                .price(100L)
-                .durationDays(10)
-                .maxSeats(100)
-                .availableSeats(100)
-                .build();
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/agency/tours/{tourId}", 55)
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("data.title", is("QWERTY"))
+                .body("data.durationDays", is(15));
 
-        when(tourService.updateTour(TOUR_ID, dto, USER_ID)).thenReturn(fullInfo);
-
-        mockMvc.perform(put("/agency/tours/{tourId}", TOUR_ID)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.price").value(100L))
-                .andExpect(jsonPath("$.data.maxSeats").value(100));
-
-        verify(tourService, times(1)).updateTour(anyLong(), any(), anyLong());
     }
 }

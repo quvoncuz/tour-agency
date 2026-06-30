@@ -1,114 +1,83 @@
 package quvoncuz.controller.agency;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import quvoncuz.dto.agency.AgencyFullInfo;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import quvoncuz.dto.agency.UpdateAgencyRequestDTO;
-import quvoncuz.security.CustomUserDetailsService;
+import quvoncuz.enums.Role;
 import quvoncuz.security.jwt.JwtUtil;
-import quvoncuz.service.AgencyService;
-import quvoncuz.util.SecurityUtil;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 
-@WebMvcTest(AgencyAgencyController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AgencyAgencyControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+    @LocalServerPort
+    private int port;
 
-    @MockitoBean
+    @Autowired
     private JwtUtil jwtUtil;
-    @MockitoBean
-    private AgencyService agencyService;
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
-    private static final Long AGENCY_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
-    }
-
-    @AfterEach
-    void tearDown() {
-        mockedStatic.close();
+        RestAssured.port = port;
     }
 
     @Test
-    @WithMockUser(roles = "AGENCY")
     void update_Success() throws Exception {
+        String token = jwtUtil.encodeAccessToken("quvonch", Role.AGENCY);
+
         UpdateAgencyRequestDTO dto = new UpdateAgencyRequestDTO();
         dto.setName("EURO Tour");
-        dto.setEmail("email@gmail.com");
+        dto.setEmail("tour_r@gmail.com");
         dto.setAddress("fasfeq");
         dto.setCity("sccda");
         dto.setDescription("sfefa");
         dto.setPhone("99985393403");
 
-        AgencyFullInfo fullInfo = AgencyFullInfo.builder()
-                .name("EURO Tour")
-                .email("email@gmail.com")
-                .build();
-
-        when(agencyService.update(anyLong(), anyLong(), any())).thenReturn(fullInfo);
-
-        mockMvc.perform(put("/agency/agencies/{agencyId}", AGENCY_ID)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.name").value("EURO Tour"))
-                .andExpect(jsonPath("$.data.email").value("email@gmail.com"));
-
-        verify(agencyService, times(1)).update(anyLong(), anyLong(), any());
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/agency/agencies/{agencyId}", 3)
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("data.name", is("EURO Tour"))
+                .body("data.email", is("tour_r@gmail.com"));
     }
 
+    //
     @Test
     void update_UnAuthorized_Throws() throws Exception {
         UpdateAgencyRequestDTO dto = new UpdateAgencyRequestDTO();
         dto.setName("EURO Tour");
-        dto.setEmail("email@gmail.com");
+        dto.setEmail("tour_r@gmail.com");
         dto.setAddress("fasfeq");
         dto.setCity("sccda");
         dto.setDescription("sfefa");
         dto.setPhone("99985393403");
 
-
-        mockMvc.perform(put("/agency/agencies/{agencyId}", AGENCY_ID)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnauthorized());
-
-        verifyNoInteractions(agencyService);
+        given()
+                .contentType(ContentType.JSON)
+                .body(dto)
+                .when()
+                .put("/api/v1/agency/agencies/{agencyId}", 3)
+                .then()
+                .log().body()
+                .statusCode(401);
     }
 
-
     @Test
-    @WithMockUser(roles = "AGENCY")
-    void update_ValidationFail() throws Exception {
+    void update_ValidationFail() {
+        String token = jwtUtil.encodeAccessToken("quvonch", Role.AGENCY);
+
         UpdateAgencyRequestDTO dto = new UpdateAgencyRequestDTO();
         dto.setName("EURO Tour");
         dto.setEmail("email@gmail.com");
@@ -117,12 +86,14 @@ class AgencyAgencyControllerTest {
         dto.setDescription("sfefa");
         dto.setPhone("99985393403");
 
-        mockMvc.perform(put("/agency/agencies/{agencyId}", -1)
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(agencyService);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/agency/agencies/{agencyId}", -3)
+                .then()
+                .log().body()
+                .statusCode(400);
     }
 }

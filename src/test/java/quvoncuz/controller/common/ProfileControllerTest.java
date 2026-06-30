@@ -1,100 +1,71 @@
 package quvoncuz.controller.common;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import quvoncuz.dto.profile.ProfileDTO;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import quvoncuz.dto.profile.UpdateProfileRequestDTO;
-import quvoncuz.security.CustomUserDetailsService;
+import quvoncuz.enums.Role;
 import quvoncuz.security.jwt.JwtUtil;
-import quvoncuz.service.ProfileService;
-import quvoncuz.util.SecurityUtil;
 
-import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.is;
 
-@WebMvcTest(ProfileController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProfileControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
+    @LocalServerPort
+    private int port;
 
-    @MockitoBean
+    @Autowired
     private JwtUtil jwtUtil;
-    @MockitoBean
-    private ProfileService profileService;
-    @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
-
-    private MockedStatic<SecurityUtil> mockedStatic;
-    private static final Long USER_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        mockedStatic = mockStatic(SecurityUtil.class);
-        mockedStatic.when(SecurityUtil::getCurrentUserId).thenReturn(USER_ID);
-    }
-
-    @AfterEach
-    void tearDown() {
-        mockedStatic.close();
+        RestAssured.port = port;
     }
 
     @Test
-    @WithMockUser
-    void update_Success() throws Exception {
+    void update_Success() {
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
+
         UpdateProfileRequestDTO dto = new UpdateProfileRequestDTO();
         dto.setEmail("email@gmail.com");
         dto.setFullName("email");
         dto.setUsername("email");
 
-        ProfileDTO profileDTO = ProfileDTO
-                .builder()
-                .id(USER_ID)
-                .fullName("email")
-                .username("email")
-                .email("email@gmail.com")
-                .build();
-
-        when(profileService.updateProfile(dto, USER_ID)).thenReturn(profileDTO);
-
-        mockMvc.perform(put("/profiles/me")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.email").value("email@gmail.com"));
-
-        verify(profileService, times(1)).updateProfile(any(), eq(USER_ID));
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/profiles/me")
+                .then()
+                .log().body()
+                .statusCode(200)
+                .body("data.fullName", is("email"))
+                .body("data.email", is("email@gmail.com"));
     }
 
     @Test
-    @WithMockUser
-    void update_ThrowsException() throws Exception {
+    void update_ThrowsException() {
+        String token = jwtUtil.encodeAccessToken("user", Role.USER);
+
         UpdateProfileRequestDTO dto = new UpdateProfileRequestDTO();
         dto.setEmail("email@gmail.com");
         dto.setFullName("email");
 
-        mockMvc.perform(put("/profiles/me")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(profileService);
+        given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + token)
+                .body(dto)
+                .when()
+                .put("/api/v1/profiles/me")
+                .then()
+                .log().body()
+                .statusCode(400);
     }
 }
