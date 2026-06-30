@@ -249,19 +249,20 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
                 .bookedAt(LocalDateTime.now())
                 .visible(true)
                 .build();
-        bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
+        Long bookingId = booking.getId();
 
         PaymentEntity payment = PaymentEntity.builder()
                 .userId(USER_ID)
                 .tourId(TOUR_ID)
-                .bookingId(1L)
+                .bookingId(bookingId)
                 .amount(500L)
                 .status(PaymentStatus.PAID)
                 .createdAt(LocalDateTime.now())
                 .build();
-        paymentRepository.save(payment);
+        payment = paymentRepository.save(payment);
 
-        mockMvc.perform(put("/bookings/{bookingId}", 1)
+        mockMvc.perform(put("/bookings/{bookingId}", bookingId)
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -269,8 +270,8 @@ class BookingControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.totalPrice").value(800L));
 
-        List<PaymentEntity> allByBookingIdAndUserIdOrderByCreatedAtDesc = paymentRepository.findAllByBookingIdAndUserIdOrderByCreatedAtDesc(1L, USER_ID);
-        assertEquals(PaymentStatus.PENDING, allByBookingIdAndUserIdOrderByCreatedAtDesc.get(0).getStatus());
+        List<PaymentEntity> paymentCheck = paymentRepository.findAllByBookingIdAndUserIdOrderByCreatedAtDesc(bookingId, USER_ID);
+        assertEquals(PaymentStatus.PENDING, paymentCheck.get(0).getStatus());
     }
 
     @Test

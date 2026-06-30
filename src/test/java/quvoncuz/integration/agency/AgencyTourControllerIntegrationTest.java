@@ -216,7 +216,8 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                 .title("qwerty")
                 .price(100L)
                 .build();
-        tourRepository.save(tour);
+        tour = tourRepository.save(tour);
+        TOUR_ID = tour.getId();
 
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
         dto.setTitle("qwerty");
@@ -254,7 +255,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                 .tourId(tour.getId())
                 .status(BookingStatus.CONFIRMED)
                 .build();
-        bookingRepository.save(booking);
+        booking = bookingRepository.save(booking);
 
         mockMvc.perform(patch("/agency/tours/{id}", TOUR_ID)
                         .with(csrf())
@@ -264,7 +265,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isNoContent());
 
         tour = tourRepository.findById(TOUR_ID).orElseThrow(() -> new NotFoundException("T"));
-        booking = bookingRepository.findById(1L).orElseThrow(() -> new NotFoundException("B"));
+        booking = bookingRepository.findById(booking.getId()).orElseThrow(() -> new NotFoundException("B"));
 
         assertEquals(TourStatus.CANCELLED, tour.getStatus());
         assertEquals(BookingStatus.CANCELED, booking.getStatus());

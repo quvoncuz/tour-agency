@@ -88,7 +88,7 @@ class AgencyControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.city").value("Tashkent"));
 
-        AgencyEntity agency = agencyRepository.findById(AGENCY_ID).orElseThrow();
+        AgencyEntity agency = agencyRepository.findAll().get(0);
 
         assertEquals(AgencyStatus.PENDING, agency.getStatus());
         assertEquals("qwerty", agency.getDescription());
