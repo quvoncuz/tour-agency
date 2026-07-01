@@ -24,10 +24,12 @@ import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
 import quvoncuz.util.SecurityUtil;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mockStatic;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -124,5 +126,51 @@ class AdminAgencyControllerIntegrationTest extends BaseIntegrationTest {
 
         agency = agencyRepository.findById(savedProfile.getId()).orElseThrow();
         Assertions.assertEquals(AgencyStatus.REJECTED, agency.getStatus());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getAllAgencies_WithPending_Success() throws Exception {
+        AgencyEntity agency = AgencyEntity.builder()
+                .id(USER_ID)
+                .ownerId(USER_ID)
+                .name("Qwerty")
+                .phone("9999999999")
+                .status(AgencyStatus.PENDING)
+                .email("mail")
+                .city("qwerty")
+                .build();
+        agencyRepository.save(agency);
+
+        mockMvc.perform(get("/admin/agencies?pending=true")
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].name").value("Qwerty"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteById_Success() throws Exception {
+        AgencyEntity agency = AgencyEntity.builder()
+                .id(USER_ID)
+                .ownerId(USER_ID)
+                .name("Qwerty")
+                .phone("9999999999")
+                .status(AgencyStatus.ACCEPTED)
+                .email("mail")
+                .city("qwerty")
+                .visible(true)
+                .build();
+        agency = agencyRepository.save(agency);
+        Long agencyId = agency.getId();
+
+        mockMvc.perform(delete("/admin/agencies/{agencyId}", agencyId)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+
+        AgencyEntity agencyCheck = agencyRepository.findById(agencyId).orElseThrow();
+        assertFalse(agencyCheck.getVisible());
     }
 }

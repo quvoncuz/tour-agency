@@ -2,7 +2,6 @@ package quvoncuz.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,10 +11,7 @@ import quvoncuz.dto.agency.*;
 import quvoncuz.entities.AgencyEntity;
 import quvoncuz.entities.ProfileEntity;
 import quvoncuz.enums.AgencyStatus;
-import quvoncuz.enums.EventType;
 import quvoncuz.enums.Role;
-import quvoncuz.events.NotificationEvent;
-import quvoncuz.events.StatisticsEvent;
 import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.exceptions.NotFoundException;
@@ -26,8 +22,6 @@ import quvoncuz.repository.ProfileRepository;
 import quvoncuz.repository.TourRepository;
 import quvoncuz.service.AgencyService;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -38,7 +32,7 @@ public class AgencyServiceImpl implements AgencyService {
     private final ProfileRepository profileRepository;
     private final AgencyRepository agencyRepository;
     private final TourRepository tourRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
+//    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -156,8 +150,9 @@ public class AgencyServiceImpl implements AgencyService {
     @Override
     public void deleteById(Long agencyId) {
         log.info("Admin deleted agency. Id: {}", agencyId);
-        agencyRepository.updateVisible(false, agencyId);
-        tourRepository.updateVisibleByAgencyId(agencyId);
+        AgencyEntity agency = findById(agencyId);
+        agency.setVisible(false);
+        tourRepository.updateVisibleByAgencyId(false, agencyId);
     }
 
     @Override

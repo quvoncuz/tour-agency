@@ -43,7 +43,7 @@ public interface TourRepository extends JpaRepository<TourEntity, Long> {
     @Modifying
     @Transactional
     @Query("update TourEntity t set t.visible = ?1 where t.agencyId = ?2")
-    void updateVisibleByAgencyId(Long agencyId);
+    void updateVisibleByAgencyId(Boolean visible, Long agencyId);
 
     Page<TourEntity> findAllByStatusAndVisible(TourStatus status, Boolean visible, Pageable pageable);
 

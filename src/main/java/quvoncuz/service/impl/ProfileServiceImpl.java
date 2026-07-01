@@ -71,7 +71,9 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     @Transactional
     public void deleteById(Long id) {
-        profileRepository.updateVisible(false, id);
+        ProfileEntity profile = findById(id);
+        profile.setVisible(false);
+        profileRepository.save(profile);
     }
 
     @Override
