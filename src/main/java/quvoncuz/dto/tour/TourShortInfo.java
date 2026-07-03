@@ -12,6 +12,7 @@ public class TourShortInfo {
     private Long id;
     private Long agencyId;
     private String title;
+    private String imageUrl;
     private String destination;
     private Long price;
     private Integer durationDays;

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 //import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,11 +35,10 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-//@RefreshScope
+@RefreshScope
 @RequiredArgsConstructor
 public class ClickService {
 
-    private final ApplicationEventPublisher applicationEventPublisher;
     @Value("${click.service-id}")
     private String serviceId;
 
@@ -54,6 +54,7 @@ public class ClickService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final ClickTransactionRepository clickTransactionRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public PaymentResponse generatePaymentUrl(PaymentRequestDTO request) {

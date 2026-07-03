@@ -12,6 +12,7 @@ public class TourFullInfo {
     private Long id;
     private Long agencyId;
     private String title;
+    private String imageUrl;
     private String description;
     private String destination;
     private Long price;

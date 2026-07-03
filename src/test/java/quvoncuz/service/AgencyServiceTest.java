@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +19,6 @@ import quvoncuz.exceptions.AlreadyExistsException;
 import quvoncuz.exceptions.DoNotMatchException;
 import quvoncuz.repository.AgencyRepository;
 import quvoncuz.repository.ProfileRepository;
-import quvoncuz.repository.TourRepository;
 import quvoncuz.service.impl.AgencyServiceImpl;
 
 import java.util.List;
@@ -38,7 +38,7 @@ class AgencyServiceTest {
     private AgencyRepository agencyRepository;
 
     @Mock
-    private TourRepository tourRepository;
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private AgencyServiceImpl agencyService;
@@ -53,10 +53,12 @@ class AgencyServiceTest {
         profile = new ProfileEntity();
         profile.setId(USER_ID);
         profile.setRole(Role.USER);
+        profile.setEmail("emaill@gmail.com");
 
         agency = new AgencyEntity();
         agency.setName("Tour Agency");
         agency.setId(AGENCY_ID);
+        agency.setEmail("email@ggmail.uz");
         agency.setOwnerId(USER_ID);
     }
 

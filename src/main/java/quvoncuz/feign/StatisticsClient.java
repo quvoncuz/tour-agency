@@ -1,13 +1,13 @@
 package quvoncuz.feign;
 
-//import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 
-//@FeignClient(name = "asistent-service", contextId = "statisticsClient", fallback = StatisticsClientFallback.class)
+@FeignClient(name = "asistent-service", url = "http://localhost:8082" ,contextId = "statisticsClient")
 public interface StatisticsClient {
 
     @GetMapping("/api/v1/statistics/agencies")

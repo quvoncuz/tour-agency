@@ -19,6 +19,8 @@ public class CreateTourRequestDTO {
     @Size(max = 255, message = "Destination length restricted")
     @NotBlank(message = "Destination is mandatory")
     private String destination;
+    @NotBlank(message = "Image is mandatory")
+    private String imageUrl;
     @Positive(message = "Price must be positive")
     private long price;
     @Positive(message = "Days must be positive")

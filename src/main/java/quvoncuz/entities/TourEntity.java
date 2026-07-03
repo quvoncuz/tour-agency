@@ -29,6 +29,9 @@ public class TourEntity {
     @Column
     private String title;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Column
     private String description;
 

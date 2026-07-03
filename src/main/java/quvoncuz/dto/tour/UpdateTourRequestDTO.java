@@ -16,6 +16,8 @@ public class UpdateTourRequestDTO {
     @Size(max = 255, message = "Description length restricted")
     @NotBlank(message = "Description is mandatory")
     private String description;
+    @NotBlank(message = "Image is mandatory")
+    private String imageUrl;
     @NotBlank(message = "Destination is mandatory")
     private String destination;
     @Positive(message = "Days must be positive")

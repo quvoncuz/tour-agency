@@ -8,6 +8,7 @@ import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -60,6 +61,8 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
     private AgencyRepository agencyRepository;
     @Autowired
     private ProfileRepository profileRepository;
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
 
     private MockedStatic<SecurityUtil> mockedStatic;
     private static Long USER_ID = 1L;
@@ -105,6 +108,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
     void createTour_Success() throws Exception {
         CreateTourRequestDTO dto = new CreateTourRequestDTO();
         dto.setTitle("qwerty");
+        dto.setImageUrl("https://example.com/image.jpg");
         dto.setMaxSeats(100);
         dto.setPrice(100L);
         dto.setStartDate(LocalDate.now().plusDays(10));
@@ -134,6 +138,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
 
         CreateTourRequestDTO dto = new CreateTourRequestDTO();
         dto.setTitle("qwerty");
+        dto.setImageUrl("https://example.com/image.jpg");
         dto.setMaxSeats(100);
         dto.setPrice(100L);
         dto.setStartDate(LocalDate.now().plusDays(10));
@@ -176,6 +181,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
         dto.setTitle("qwerty");
+        dto.setImageUrl("https://example.com/image.jpg");
         dto.setMaxSeats(100);
         dto.setPrice(200L);
         dto.setStartDate(LocalDate.now().plusDays(10));
@@ -221,6 +227,7 @@ class AgencyTourControllerIntegrationTest extends BaseIntegrationTest {
 
         UpdateTourRequestDTO dto = new UpdateTourRequestDTO();
         dto.setTitle("qwerty");
+        dto.setImageUrl("https://example.com/image.jpg");
         dto.setMaxSeats(100);
         dto.setPrice(200L);
         dto.setStartDate(LocalDate.now().plusDays(10));

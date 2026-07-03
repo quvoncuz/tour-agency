@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +44,9 @@ class TourServiceTest {
     private AgencyService agencyService;
     @Mock
     private BookingRepository bookingRepository;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private TourServiceImpl tourService;
@@ -82,7 +86,6 @@ class TourServiceTest {
         dto.setDurationDays(3);
         dto.setStartDate(LocalDate.now().plusDays(5));
         dto.setPrice(300);
-
 
 
         // 2. Mock qoidalarini aniq yozish
